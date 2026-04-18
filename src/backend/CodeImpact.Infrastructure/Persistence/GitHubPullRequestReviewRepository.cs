@@ -18,6 +18,15 @@ public class GitHubPullRequestReviewRepository : IGitHubPullRequestReviewReposit
         return _dbContext.GitHubPullRequestReviews.FirstOrDefaultAsync(r => r.GitHubReviewId == gitHubReviewId);
     }
 
+    public async Task<IReadOnlyCollection<GitHubPullRequestReview>> ListByPullRequestAsync(Guid userId, long repositoryId, long gitHubPullRequestId)
+    {
+        return await _dbContext.GitHubPullRequestReviews
+            .AsNoTracking()
+            .Where(r => r.UserId == userId && r.RepositoryId == repositoryId && r.GitHubPullRequestId == gitHubPullRequestId)
+            .OrderByDescending(r => r.SubmittedAt)
+            .ToListAsync();
+    }
+
     public async Task AddAsync(GitHubPullRequestReview review)
     {
         _dbContext.GitHubPullRequestReviews.Add(review);

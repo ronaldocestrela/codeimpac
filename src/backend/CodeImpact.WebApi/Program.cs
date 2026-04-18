@@ -7,12 +7,12 @@ using Scalar.AspNetCore;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddWebApiServices(builder.Configuration);
-// Add CORS for frontend development (Vite default origin)
+// Add CORS for frontend development (Vite dev origin)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowLocalhostVite", policy =>
     {
-        policy.WithOrigins("http://localhost:5173")
+        policy.WithOrigins("http://localhost:1597")
               .AllowAnyHeader()
               .AllowAnyMethod();
     });

@@ -2,7 +2,7 @@ import axios from 'axios'
 import { getAuthState, useAuthStore } from '../store/authStore'
 import type { AuthResult } from '../types/auth'
 
-const baseURL = process.env.VITE_API_BASE_URL || 'https://localhost:7243/api'
+const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5262/api'
 
 const api = axios.create({
   baseURL,

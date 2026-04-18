@@ -134,3 +134,5 @@ A feature is complete when:
 - Tests pass
 - Commits and approved PRs are traceable from source to report
 - Report is readable by leadership and includes objective evidence
+- TDD
+- Always update documentation

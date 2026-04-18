@@ -19,6 +19,39 @@ public class GitHubCommitRepository : IGitHubCommitRepository
             c => c.UserId == userId && c.RepositoryId == repositoryId && c.CommitSha == commitSha);
     }
 
+    public async Task<IReadOnlyCollection<GitHubCommit>> ListByUserAsync(Guid userId, long? repositoryId, DateTime? from, DateTime? to)
+    {
+        var query = _dbContext.GitHubCommits
+            .AsNoTracking()
+            .Where(c => c.UserId == userId);
+
+        if (repositoryId.HasValue)
+        {
+            query = query.Where(c => c.RepositoryId == repositoryId.Value);
+        }
+
+        if (from.HasValue)
+        {
+            query = query.Where(c => c.CommittedAt >= from.Value);
+        }
+
+        if (to.HasValue)
+        {
+            query = query.Where(c => c.CommittedAt <= to.Value);
+        }
+
+        return await query
+            .OrderByDescending(c => c.CommittedAt)
+            .ToListAsync();
+    }
+
+    public Task<GitHubCommit?> GetByIdAsync(Guid userId, Guid commitId)
+    {
+        return _dbContext.GitHubCommits
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.UserId == userId && c.Id == commitId);
+    }
+
     public async Task AddAsync(GitHubCommit commit)
     {
         _dbContext.GitHubCommits.Add(commit);

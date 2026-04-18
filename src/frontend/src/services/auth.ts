@@ -2,7 +2,7 @@ import axios from 'axios'
 import api from './api'
 import type { AuthResult, LoginPayload, RefreshRequest, UserInfo } from '../types/auth'
 
-const baseURL = process.env.VITE_API_BASE_URL || 'https://localhost:7243/api'
+const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5262/api'
 const refreshClient = axios.create({
   baseURL,
   headers: {

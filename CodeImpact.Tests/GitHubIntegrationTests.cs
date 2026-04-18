@@ -254,6 +254,149 @@ public class GitHubIntegrationTests
     }
 
     [Fact]
+    public async Task SyncGitHubRepositoryCommandHandler_MarksPullRequestAsNotApproved_WhenNoApprovedReviewExists()
+    {
+        var userId = Guid.NewGuid();
+        var account = new GitHubAccount(userId, "octocat", 123, "encrypted-token");
+        var accountRepository = new StubGitHubAccountRepository
+        {
+            GetByUserIdAsyncDelegate = _ => Task.FromResult<GitHubAccount?>(account)
+        };
+
+        var selectionRepository = new StubGitHubRepositorySelectionRepository
+        {
+            GetByUserAndRepositoryIdAsyncDelegate = (_, repositoryId) => Task.FromResult<GitHubRepositorySelection?>(
+                new GitHubRepositorySelection(userId, account.Id, repositoryId, "repo", "octocat/repo", false))
+        };
+
+        var service = new StubGitHubService
+        {
+            GetPullRequestsAsyncDelegate = (_, _) => Task.FromResult<IEnumerable<GitHubPullRequestDto>>(new[]
+            {
+                new GitHubPullRequestDto(500, 42, "Improve dashboard", "open", "octocat", DateTime.UtcNow, null, null, "https://github.com/octocat/repo/pull/42")
+            }),
+            GetPullRequestReviewsAsyncDelegate = (_, _, _) => Task.FromResult<IEnumerable<GitHubPullRequestReviewDto>>(new[]
+            {
+                new GitHubPullRequestReviewDto(901, "reviewer-a", "COMMENTED", DateTime.UtcNow, "https://github.com/octocat/repo/pull/42#pullrequestreview-901")
+            }),
+            GetCommitsAsyncDelegate = (_, _) => Task.FromResult<IEnumerable<GitHubCommitDto>>(Array.Empty<GitHubCommitDto>())
+        };
+
+        var pullRequestRepository = new StubGitHubPullRequestRepository();
+
+        var handler = new SyncGitHubRepositoryCommandHandler(
+            accountRepository,
+            selectionRepository,
+            service,
+            new StubGitHubCommitRepository(),
+            pullRequestRepository,
+            new StubGitHubPullRequestReviewRepository());
+
+        await handler.Handle(new SyncGitHubRepositoryCommand(userId, 100), CancellationToken.None);
+
+        Assert.Single(pullRequestRepository.AddedPullRequests);
+        Assert.False(pullRequestRepository.AddedPullRequests[0].IsApproved);
+    }
+
+    [Fact]
+    public async Task GetContributionsQueryHandler_ReturnsUnifiedContributionsOrderedByDate()
+    {
+        var userId = Guid.NewGuid();
+        var newerDate = DateTime.UtcNow;
+        var olderDate = newerDate.AddDays(-1);
+
+        var commitRepository = new StubGitHubCommitRepository
+        {
+            ListByUserAsyncDelegate = (_, _, _, _) => Task.FromResult<IReadOnlyCollection<GitHubCommit>>(new[]
+            {
+                new GitHubCommit(userId, Guid.NewGuid(), 100, "octocat/repo", "abc123", "feat: add dashboard", "Octo Cat", "octo@example.com", olderDate, "https://github.com/octocat/repo/commit/abc123")
+            })
+        };
+
+        var pullRequestRepository = new StubGitHubPullRequestRepository
+        {
+            ListByUserAsyncDelegate = (_, _, _, _) => Task.FromResult<IReadOnlyCollection<GitHubPullRequest>>(new[]
+            {
+                new GitHubPullRequest(userId, Guid.NewGuid(), 100, "octocat/repo", 500, 42, "Improve dashboard", "open", "octocat", true, newerDate, null, null, "https://github.com/octocat/repo/pull/42")
+            })
+        };
+
+        var handler = new GetContributionsQueryHandler(commitRepository, pullRequestRepository);
+
+        var result = await handler.Handle(new GetContributionsQuery(userId, null, null, null), CancellationToken.None);
+
+        Assert.Equal(2, result.Count);
+        Assert.Equal("pull_request", result.First().Type);
+        Assert.Equal("approved", result.First().Status);
+        Assert.Equal("commit", result.Last().Type);
+    }
+
+    [Fact]
+    public async Task GetContributionsQueryHandler_Throws_WhenDateRangeIsInvalid()
+    {
+        var userId = Guid.NewGuid();
+        var handler = new GetContributionsQueryHandler(new StubGitHubCommitRepository(), new StubGitHubPullRequestRepository());
+
+        await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await handler.Handle(
+                new GetContributionsQuery(userId, null, DateTime.UtcNow, DateTime.UtcNow.AddDays(-1)),
+                CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task GetPullRequestContributionDetailQueryHandler_ReturnsReviewEvidence()
+    {
+        var userId = Guid.NewGuid();
+        var pullRequest = new GitHubPullRequest(
+            userId,
+            Guid.NewGuid(),
+            100,
+            "octocat/repo",
+            500,
+            42,
+            "Improve dashboard",
+            "open",
+            "octocat",
+            true,
+            DateTime.UtcNow,
+            null,
+            null,
+            "https://github.com/octocat/repo/pull/42");
+
+        var pullRequestRepository = new StubGitHubPullRequestRepository
+        {
+            GetByIdAsyncDelegate = (_, _) => Task.FromResult<GitHubPullRequest?>(pullRequest)
+        };
+
+        var reviewRepository = new StubGitHubPullRequestReviewRepository
+        {
+            ListByPullRequestAsyncDelegate = (_, _, _) => Task.FromResult<IReadOnlyCollection<GitHubPullRequestReview>>(new[]
+            {
+                new GitHubPullRequestReview(
+                    userId,
+                    Guid.NewGuid(),
+                    100,
+                    "octocat/repo",
+                    500,
+                    900,
+                    "reviewer-a",
+                    "APPROVED",
+                    DateTime.UtcNow,
+                    "https://github.com/octocat/repo/pull/42#pullrequestreview-900")
+            })
+        };
+
+        var handler = new GetPullRequestContributionDetailQueryHandler(pullRequestRepository, reviewRepository);
+
+        var result = await handler.Handle(new GetPullRequestContributionDetailQuery(userId, pullRequest.Id), CancellationToken.None);
+
+        Assert.NotNull(result);
+        Assert.Equal("approved", result!.Status);
+        Assert.Equal(2, result.Evidence.Count);
+        Assert.Contains(result.Evidence, evidence => evidence.EvidenceType == "pull_request_review");
+    }
+
+    [Fact]
     public async Task UpdateSelectedGitHubRepositoriesCommandHandler_ReplacesSelections_WhenAccountExists()
     {
         var userId = Guid.NewGuid();
@@ -469,9 +612,19 @@ public class GitHubIntegrationTests
     private sealed class StubGitHubCommitRepository : IGitHubCommitRepository
     {
         public List<GitHubCommit> AddedCommits { get; } = new();
+        public Func<Guid, long?, DateTime?, DateTime?, Task<IReadOnlyCollection<GitHubCommit>>> ListByUserAsyncDelegate { get; set; }
+            = (_, _, _, _) => Task.FromResult<IReadOnlyCollection<GitHubCommit>>(Array.Empty<GitHubCommit>());
+        public Func<Guid, Guid, Task<GitHubCommit?>> GetByIdAsyncDelegate { get; set; }
+            = (_, _) => Task.FromResult<GitHubCommit?>(null);
 
         public Task<GitHubCommit?> GetByUserRepositoryAndShaAsync(Guid userId, long repositoryId, string commitSha)
             => Task.FromResult<GitHubCommit?>(null);
+
+        public Task<IReadOnlyCollection<GitHubCommit>> ListByUserAsync(Guid userId, long? repositoryId, DateTime? from, DateTime? to)
+            => ListByUserAsyncDelegate(userId, repositoryId, from, to);
+
+        public Task<GitHubCommit?> GetByIdAsync(Guid userId, Guid commitId)
+            => GetByIdAsyncDelegate(userId, commitId);
 
         public Task AddAsync(GitHubCommit commit)
         {
@@ -485,9 +638,19 @@ public class GitHubIntegrationTests
     private sealed class StubGitHubPullRequestRepository : IGitHubPullRequestRepository
     {
         public List<GitHubPullRequest> AddedPullRequests { get; } = new();
+        public Func<Guid, long?, DateTime?, DateTime?, Task<IReadOnlyCollection<GitHubPullRequest>>> ListByUserAsyncDelegate { get; set; }
+            = (_, _, _, _) => Task.FromResult<IReadOnlyCollection<GitHubPullRequest>>(Array.Empty<GitHubPullRequest>());
+        public Func<Guid, Guid, Task<GitHubPullRequest?>> GetByIdAsyncDelegate { get; set; }
+            = (_, _) => Task.FromResult<GitHubPullRequest?>(null);
 
         public Task<GitHubPullRequest?> GetByUserRepositoryAndGitHubPullRequestIdAsync(Guid userId, long repositoryId, long gitHubPullRequestId)
             => Task.FromResult<GitHubPullRequest?>(null);
+
+        public Task<IReadOnlyCollection<GitHubPullRequest>> ListByUserAsync(Guid userId, long? repositoryId, DateTime? from, DateTime? to)
+            => ListByUserAsyncDelegate(userId, repositoryId, from, to);
+
+        public Task<GitHubPullRequest?> GetByIdAsync(Guid userId, Guid pullRequestId)
+            => GetByIdAsyncDelegate(userId, pullRequestId);
 
         public Task AddAsync(GitHubPullRequest pullRequest)
         {
@@ -501,9 +664,14 @@ public class GitHubIntegrationTests
     private sealed class StubGitHubPullRequestReviewRepository : IGitHubPullRequestReviewRepository
     {
         public List<GitHubPullRequestReview> AddedReviews { get; } = new();
+        public Func<Guid, long, long, Task<IReadOnlyCollection<GitHubPullRequestReview>>> ListByPullRequestAsyncDelegate { get; set; }
+            = (_, _, _) => Task.FromResult<IReadOnlyCollection<GitHubPullRequestReview>>(Array.Empty<GitHubPullRequestReview>());
 
         public Task<GitHubPullRequestReview?> GetByGitHubReviewIdAsync(long gitHubReviewId)
             => Task.FromResult<GitHubPullRequestReview?>(null);
+
+        public Task<IReadOnlyCollection<GitHubPullRequestReview>> ListByPullRequestAsync(Guid userId, long repositoryId, long gitHubPullRequestId)
+            => ListByPullRequestAsyncDelegate(userId, repositoryId, gitHubPullRequestId);
 
         public Task AddAsync(GitHubPullRequestReview review)
         {

@@ -13,8 +13,8 @@ public class TokenServiceTests
     {
         var jwtSettings = new JwtSettings
         {
-            Issuer = "https://localhost:7243",
-            Audience = "https://localhost:7243",
+            Issuer = "https://localhost:5262",
+            Audience = "https://localhost:5262",
             Secret = "ASecretKeyOfAtLeast32Characters!",
             AccessTokenExpirationMinutes = 30,
             RefreshTokenExpirationDays = 30
@@ -34,8 +34,8 @@ public class TokenServiceTests
         var handler = new JwtSecurityTokenHandler();
         var jwt = handler.ReadJwtToken(token);
 
-        Assert.Equal("https://localhost:7243", jwt.Issuer);
-        Assert.Equal("https://localhost:7243", jwt.Audiences.Single());
+        Assert.Equal("https://localhost:5262", jwt.Issuer);
+        Assert.Equal("https://localhost:5262", jwt.Audiences.Single());
         Assert.Contains(jwt.Claims, c => c.Type == JwtRegisteredClaimNames.Email && c.Value == "user@example.com");
         Assert.Contains(jwt.Claims, c => c.Type == JwtRegisteredClaimNames.Sub);
     }

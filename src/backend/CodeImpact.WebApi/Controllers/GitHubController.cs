@@ -118,6 +118,62 @@ namespace CodeImpact.WebApi.Controllers
             }
         }
 
+        [HttpGet("contributions")]
+        public async Task<IActionResult> GetContributions([FromQuery] long? repositoryId, [FromQuery] DateTime? from, [FromQuery] DateTime? to)
+        {
+            var userId = GetUserId();
+            if (userId == Guid.Empty)
+            {
+                return Unauthorized();
+            }
+
+            try
+            {
+                var contributions = await _mediator.Send(new GetContributionsQuery(userId, repositoryId, from, to));
+                return Ok(contributions);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
+        }
+
+        [HttpGet("contributions/commits/{contributionId:guid}")]
+        public async Task<IActionResult> GetCommitContributionDetail(Guid contributionId)
+        {
+            var userId = GetUserId();
+            if (userId == Guid.Empty)
+            {
+                return Unauthorized();
+            }
+
+            var contribution = await _mediator.Send(new GetCommitContributionDetailQuery(userId, contributionId));
+            if (contribution is null)
+            {
+                return NotFound();
+            }
+
+            return Ok(contribution);
+        }
+
+        [HttpGet("contributions/pull-requests/{contributionId:guid}")]
+        public async Task<IActionResult> GetPullRequestContributionDetail(Guid contributionId)
+        {
+            var userId = GetUserId();
+            if (userId == Guid.Empty)
+            {
+                return Unauthorized();
+            }
+
+            var contribution = await _mediator.Send(new GetPullRequestContributionDetailQuery(userId, contributionId));
+            if (contribution is null)
+            {
+                return NotFound();
+            }
+
+            return Ok(contribution);
+        }
+
         private Guid GetUserId()
         {
             var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value

@@ -36,6 +36,8 @@
 5. Detail contribution with evidence links
 6. Basic classification (no AI)
 
+*Status: In progress — contribution query APIs (list/detail), evidence mapping, PR approval classification coverage, and frontend list/detail pages were started.*
+
 # Phase 5 — AI Integration
 1. Create ILLMService
 2. Implement OpenAIService
