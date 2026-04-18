@@ -1,12 +1,16 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { getContributions } from '../services/contributions'
+import { getGitHubRepositories, getSelectedGitHubRepositories } from '../services/github'
 import type { ContributionListItem } from '../types/contributions'
+import type { GitHubRepository } from '../types/github'
+
+function formatNumber(value: number): string {
+  return new Intl.NumberFormat('pt-BR').format(value)
+}
 
 export default function ContributionsPage() {
-  const [contributions, setContributions] = useState<ContributionListItem[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [repositoryId, setRepositoryId] = useState('')
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
@@ -17,15 +21,44 @@ export default function ContributionsPage() {
     to: to || undefined
   }), [repositoryId, from, to])
 
-  useEffect(() => {
-    setLoading(true)
-    setError(null)
+  const repositoriesQuery = useQuery({
+    queryKey: ['contributions-repositories'],
+    queryFn: async (): Promise<GitHubRepository[]> => {
+      const selected = await getSelectedGitHubRepositories()
+      if (selected.length > 0) {
+        return selected
+      }
 
-    getContributions(filters)
-      .then(setContributions)
-      .catch(() => setError('Não foi possível carregar as contribuições.'))
-      .finally(() => setLoading(false))
-  }, [filters])
+      return getGitHubRepositories()
+    }
+  })
+
+  const contributionsQuery = useQuery({
+    queryKey: ['contributions', filters],
+    queryFn: () => getContributions(filters)
+  })
+
+  const contributions = contributionsQuery.data ?? []
+  const repositories = repositoriesQuery.data ?? []
+
+  const metrics = useMemo(() => {
+    const commits = contributions.filter(item => item.type === 'commit').length
+    const pullRequests = contributions.filter(item => item.type === 'pull_request').length
+    const approvedPullRequests = contributions.filter(item => item.type === 'pull_request' && item.isApproved === true).length
+
+    return {
+      total: contributions.length,
+      commits,
+      pullRequests,
+      approvedPullRequests
+    }
+  }, [contributions])
+
+  const clearFilters = () => {
+    setRepositoryId('')
+    setFrom('')
+    setTo('')
+  }
 
   return (
     <div className="space-y-6">
@@ -35,13 +68,26 @@ export default function ContributionsPage() {
 
         <div className="mt-4 grid gap-3 md:grid-cols-3">
           <label className="text-sm text-slate-700">
-            Repositório (ID)
-            <input
+            Repositório
+            <select
               className="mt-1 w-full rounded border border-slate-300 px-3 py-2"
-              placeholder="Ex: 100"
               value={repositoryId}
               onChange={event => setRepositoryId(event.target.value)}
-            />
+              disabled={repositoriesQuery.isLoading || repositories.length === 0}
+            >
+              <option value="">Todos os repositórios</option>
+              {repositories.map(repo => (
+                <option key={repo.id} value={String(repo.id)}>
+                  {repo.fullName}
+                </option>
+              ))}
+            </select>
+            {repositoriesQuery.isLoading && (
+              <p className="mt-1 text-xs text-slate-500">Carregando repositórios...</p>
+            )}
+            {repositoriesQuery.isError && (
+              <p className="mt-1 text-xs text-amber-700">Não foi possível carregar o filtro de repositórios.</p>
+            )}
           </label>
           <label className="text-sm text-slate-700">
             De
@@ -62,17 +108,44 @@ export default function ContributionsPage() {
             />
           </label>
         </div>
+
+        <button
+          type="button"
+          onClick={clearFilters}
+          className="mt-3 text-sm text-indigo-700 hover:underline"
+        >
+          Limpar filtros
+        </button>
+
+        <div className="mt-4 grid gap-3 md:grid-cols-4">
+          <div className="rounded border border-slate-200 bg-slate-50 p-3">
+            <p className="text-xs text-slate-500">Total</p>
+            <p className="mt-1 text-lg font-semibold text-slate-900">{formatNumber(metrics.total)}</p>
+          </div>
+          <div className="rounded border border-slate-200 bg-slate-50 p-3">
+            <p className="text-xs text-slate-500">Commits</p>
+            <p className="mt-1 text-lg font-semibold text-slate-900">{formatNumber(metrics.commits)}</p>
+          </div>
+          <div className="rounded border border-slate-200 bg-slate-50 p-3">
+            <p className="text-xs text-slate-500">Pull Requests</p>
+            <p className="mt-1 text-lg font-semibold text-slate-900">{formatNumber(metrics.pullRequests)}</p>
+          </div>
+          <div className="rounded border border-slate-200 bg-slate-50 p-3">
+            <p className="text-xs text-slate-500">PRs aprovados</p>
+            <p className="mt-1 text-lg font-semibold text-slate-900">{formatNumber(metrics.approvedPullRequests)}</p>
+          </div>
+        </div>
       </section>
 
       <section className="rounded-lg border bg-white p-4 shadow-sm">
-        {loading && <p className="text-sm text-slate-600">Carregando contribuições...</p>}
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {contributionsQuery.isLoading && <p className="text-sm text-slate-600">Carregando contribuições...</p>}
+        {contributionsQuery.isError && <p className="text-sm text-red-600">Não foi possível carregar as contribuições.</p>}
 
-        {!loading && !error && contributions.length === 0 && (
+        {!contributionsQuery.isLoading && !contributionsQuery.isError && contributions.length === 0 && (
           <p className="text-sm text-slate-600">Nenhuma contribuição encontrada para os filtros informados.</p>
         )}
 
-        {!loading && !error && contributions.length > 0 && (
+        {!contributionsQuery.isLoading && !contributionsQuery.isError && contributions.length > 0 && (
           <div className="overflow-x-auto">
             <table className="min-w-full text-left text-sm">
               <thead>

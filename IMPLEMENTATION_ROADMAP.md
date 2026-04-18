@@ -64,6 +64,8 @@
 4. Repository and period filters for report scope
 5. Export UI
 
+*Status: Implemented — dashboard com KPIs e ações rápidas, página de contribuições com filtros por repositório/período e métricas, página de relatórios com histórico/detalhe, filtros de escopo por repositório e período, e UI de exportação (Markdown, CSV e JSON).*
+
 # Phase 8 — Background Jobs
 1. Setup Hangfire
 2. Move AI processing to jobs

@@ -1,7 +1,16 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { generateExecutiveReport, getExecutiveReportDetail, getExecutiveReports } from '../services/reports'
+import { getGitHubRepositories, getSelectedGitHubRepositories } from '../services/github'
 import type { ExecutiveReport, ExecutiveReportFilters, ExecutiveReportListItem } from '../types/reports'
+import type { GitHubRepository } from '../types/github'
+import {
+  buildExecutiveReportCsv,
+  buildExecutiveReportMarkdown,
+  downloadExport,
+  getReportExportFileName,
+  type ReportExportFormat
+} from '../utils/reportExport'
 
 function formatDate(value: string | null | undefined): string {
   if (!value) {
@@ -38,6 +47,20 @@ export default function ReportsPage() {
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null)
+  const [exportFormat, setExportFormat] = useState<ReportExportFormat>('markdown')
+  const [exportFeedback, setExportFeedback] = useState<string | null>(null)
+
+  const repositoriesQuery = useQuery({
+    queryKey: ['report-repositories'],
+    queryFn: async (): Promise<GitHubRepository[]> => {
+      const selectedRepositories = await getSelectedGitHubRepositories()
+      if (selectedRepositories.length > 0) {
+        return selectedRepositories
+      }
+
+      return getGitHubRepositories()
+    }
+  })
 
   const filters = useMemo<ExecutiveReportFilters>(() => ({
     repositoryId: repositoryId ? Number(repositoryId) : undefined,
@@ -65,6 +88,34 @@ export default function ReportsPage() {
   })
 
   const reports = reportsQuery.data ?? []
+  const repositories = repositoriesQuery.data ?? []
+
+  const handleExport = () => {
+    if (!detailQuery.data) {
+      return
+    }
+
+    const report = detailQuery.data
+    const fileName = getReportExportFileName(report, exportFormat)
+
+    if (exportFormat === 'markdown') {
+      const markdown = buildExecutiveReportMarkdown(report)
+      downloadExport(markdown, fileName, 'text/markdown;charset=utf-8')
+      setExportFeedback('Relatório exportado em Markdown.')
+      return
+    }
+
+    if (exportFormat === 'csv') {
+      const csv = buildExecutiveReportCsv(report)
+      downloadExport(csv, fileName, 'text/csv;charset=utf-8')
+      setExportFeedback('Relatório exportado em CSV.')
+      return
+    }
+
+    const json = JSON.stringify(report, null, 2)
+    downloadExport(json, fileName, 'application/json;charset=utf-8')
+    setExportFeedback('Relatório exportado em JSON.')
+  }
 
   return (
     <div className="space-y-6">
@@ -74,13 +125,26 @@ export default function ReportsPage() {
 
         <div className="mt-4 grid gap-3 md:grid-cols-3">
           <label className="text-sm text-slate-700">
-            Repositório (ID)
-            <input
+            Repositório
+            <select
               className="mt-1 w-full rounded border border-slate-300 px-3 py-2"
-              placeholder="Ex: 100"
               value={repositoryId}
               onChange={event => setRepositoryId(event.target.value)}
-            />
+              disabled={repositoriesQuery.isLoading || repositories.length === 0}
+            >
+              <option value="">Todos os repositórios</option>
+              {repositories.map(repo => (
+                <option key={repo.id} value={String(repo.id)}>
+                  {repo.fullName}
+                </option>
+              ))}
+            </select>
+            {repositoriesQuery.isLoading && (
+              <p className="mt-1 text-xs text-slate-500">Carregando repositórios...</p>
+            )}
+            {repositoriesQuery.isError && (
+              <p className="mt-1 text-xs text-red-600">Não foi possível carregar os repositórios para o filtro.</p>
+            )}
           </label>
 
           <label className="text-sm text-slate-700">
@@ -139,6 +203,30 @@ export default function ReportsPage() {
         </section>
 
         <section className="rounded-lg border bg-white p-4 shadow-sm">
+          <div className="mb-4 flex flex-wrap items-center gap-2 border-b border-slate-200 pb-4">
+            <select
+              className="rounded border border-slate-300 px-3 py-2 text-sm"
+              value={exportFormat}
+              onChange={event => setExportFormat(event.target.value as ReportExportFormat)}
+              disabled={!detailQuery.data}
+            >
+              <option value="markdown">Markdown (.md)</option>
+              <option value="csv">CSV (.csv)</option>
+              <option value="json">JSON (.json)</option>
+            </select>
+
+            <button
+              type="button"
+              onClick={handleExport}
+              disabled={!detailQuery.data}
+              className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Exportar
+            </button>
+
+            {exportFeedback && <p className="text-sm text-green-700">{exportFeedback}</p>}
+          </div>
+
           {!selectedReportId && <p className="text-sm text-slate-600">Selecione um relatório no histórico para visualizar os detalhes.</p>}
           {selectedReportId && detailQuery.isLoading && <p className="text-sm text-slate-600">Carregando detalhes do relatório...</p>}
           {selectedReportId && detailQuery.isError && <p className="text-sm text-red-600">Falha ao carregar detalhes do relatório.</p>}
