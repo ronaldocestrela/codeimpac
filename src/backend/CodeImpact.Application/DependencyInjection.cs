@@ -1,5 +1,6 @@
 using System.Reflection;
 using CodeImpact.Application.AI;
+using CodeImpact.Application.BackgroundJobs;
 using CodeImpact.Application.Common.Interfaces;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,6 +15,7 @@ namespace CodeImpact.Application
             services.AddScoped<IContributionPromptBuilder, ContributionPromptBuilder>();
             services.AddScoped<IAIOrchestrator, AIOrchestrator>();
             services.AddScoped<IExecutiveReportOrchestrator, ExecutiveReportOrchestrator>();
+            services.AddScoped<BackgroundGenerationJobProcessor>();
             return services;
         }
     }

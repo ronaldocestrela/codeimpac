@@ -1,8 +1,9 @@
 import api from './api'
 import type { ExecutiveReport, ExecutiveReportFilters, ExecutiveReportListItem } from '../types/reports'
+import type { BackgroundJobEnqueueResponse } from '../types/backgroundJobs'
 
-export const generateExecutiveReport = async (filters: ExecutiveReportFilters = {}): Promise<ExecutiveReport> => {
-  const response = await api.post<ExecutiveReport>('github/reports', {
+export const enqueueExecutiveReportGeneration = async (filters: ExecutiveReportFilters = {}): Promise<BackgroundJobEnqueueResponse> => {
+  const response = await api.post<BackgroundJobEnqueueResponse>('github/reports', {
     repositoryId: filters.repositoryId,
     from: filters.from,
     to: filters.to

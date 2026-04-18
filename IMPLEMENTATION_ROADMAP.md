@@ -71,6 +71,8 @@
 2. Move AI processing to jobs
 3. Move report generation to jobs
 
+*Status: Implemented — Hangfire foi configurado com storage em SQL Server e dashboard em ambiente de desenvolvimento; a geração de resumo de contribuições e a geração de relatórios executivos foram movidas para background jobs com enfileiramento assíncrono, rastreabilidade por task ID, persistência de status/resultado/erro e polling no frontend para atualização automática ao concluir.*
+
 # Phase 9 — Export
 1. Markdown export
 2. PDF export

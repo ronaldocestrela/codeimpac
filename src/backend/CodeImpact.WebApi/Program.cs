@@ -1,4 +1,5 @@
 using CodeImpact.WebApi.Extensions;
+using Hangfire;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -26,6 +27,7 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.MapScalarApiReference();
+    app.MapHangfireDashboard("/hangfire");
 }
 
 app.UseHttpsRedirection();

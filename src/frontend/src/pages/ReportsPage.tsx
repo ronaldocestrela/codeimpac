@@ -1,9 +1,11 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { generateExecutiveReport, getExecutiveReportDetail, getExecutiveReports } from '../services/reports'
+import { enqueueExecutiveReportGeneration, getExecutiveReportDetail, getExecutiveReports } from '../services/reports'
+import { getBackgroundJobStatus } from '../services/backgroundJobs'
 import { getGitHubRepositories, getSelectedGitHubRepositories } from '../services/github'
-import type { ExecutiveReport, ExecutiveReportFilters, ExecutiveReportListItem } from '../types/reports'
+import type { ExecutiveReportFilters, ExecutiveReportListItem } from '../types/reports'
 import type { GitHubRepository } from '../types/github'
+import type { BackgroundJobStatusResponse } from '../types/backgroundJobs'
 import {
   buildExecutiveReportCsv,
   buildExecutiveReportMarkdown,
@@ -47,6 +49,8 @@ export default function ReportsPage() {
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null)
+  const [pendingJobId, setPendingJobId] = useState<string | null>(null)
+  const [jobFeedback, setJobFeedback] = useState<string | null>(null)
   const [exportFormat, setExportFormat] = useState<ReportExportFormat>('markdown')
   const [exportFeedback, setExportFeedback] = useState<string | null>(null)
 
@@ -79,11 +83,40 @@ export default function ReportsPage() {
     enabled: Boolean(selectedReportId)
   })
 
-  const createMutation = useMutation({
-    mutationFn: () => generateExecutiveReport(filters),
-    onSuccess: (report: ExecutiveReport) => {
-      setSelectedReportId(report.id)
+  const jobStatusQuery = useQuery({
+    queryKey: ['report-generation-job', pendingJobId],
+    queryFn: (): Promise<BackgroundJobStatusResponse> => getBackgroundJobStatus(pendingJobId ?? ''),
+    enabled: Boolean(pendingJobId),
+    refetchInterval: query => {
+      const status = query.state.data?.status
+      return status === 'Queued' || status === 'Processing' ? 2000 : false
+    }
+  })
+
+  useEffect(() => {
+    if (!pendingJobId || !jobStatusQuery.data) {
+      return
+    }
+
+    if (jobStatusQuery.data.status === 'Succeeded' && jobStatusQuery.data.reportId) {
+      setSelectedReportId(jobStatusQuery.data.reportId)
+      setPendingJobId(null)
+      setJobFeedback('Relatorio concluido com sucesso.')
       void reportsQuery.refetch()
+      return
+    }
+
+    if (jobStatusQuery.data.status === 'Failed') {
+      setPendingJobId(null)
+      setJobFeedback(jobStatusQuery.data.errorMessage || 'Falha ao processar o relatorio em background.')
+    }
+  }, [pendingJobId, jobStatusQuery.data, reportsQuery])
+
+  const createMutation = useMutation({
+    mutationFn: () => enqueueExecutiveReportGeneration(filters),
+    onSuccess: job => {
+      setPendingJobId(job.taskId)
+      setJobFeedback('Geracao enfileirada. Processando em background...')
     }
   })
 
@@ -171,14 +204,20 @@ export default function ReportsPage() {
         <button
           type="button"
           onClick={() => createMutation.mutate()}
-          disabled={createMutation.isPending}
+          disabled={createMutation.isPending || Boolean(pendingJobId)}
           className="mt-4 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {createMutation.isPending ? 'Gerando relatório...' : 'Gerar Relatório'}
+          {createMutation.isPending || pendingJobId ? 'Processando em background...' : 'Gerar Relatório'}
         </button>
 
         {createMutation.isError && (
           <p className="mt-3 text-sm text-red-600">Não foi possível gerar o relatório com os filtros informados.</p>
+        )}
+        {jobFeedback && (
+          <p className={`mt-3 text-sm ${jobFeedback.toLowerCase().includes('falha') ? 'text-red-600' : 'text-slate-700'}`}>{jobFeedback}</p>
+        )}
+        {pendingJobId && jobStatusQuery.data?.status === 'Processing' && (
+          <p className="mt-2 text-xs text-slate-500">Job em execucao. O historico sera atualizado automaticamente ao concluir.</p>
         )}
       </section>
 

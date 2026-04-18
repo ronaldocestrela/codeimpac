@@ -21,6 +21,7 @@ namespace CodeImpact.Infrastructure.Persistence
         public DbSet<GitHubPullRequest> GitHubPullRequests { get; set; } = null!;
         public DbSet<GitHubPullRequestReview> GitHubPullRequestReviews { get; set; } = null!;
         public DbSet<Report> Reports { get; set; } = null!;
+        public DbSet<BackgroundJobExecution> BackgroundJobExecutions { get; set; } = null!;
         public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder builder)
@@ -81,6 +82,17 @@ namespace CodeImpact.Infrastructure.Persistence
             {
                 entity.HasIndex(rt => rt.Token).IsUnique();
                 entity.Property(rt => rt.Token).HasMaxLength(512).IsRequired();
+            });
+
+            builder.Entity<BackgroundJobExecution>(entity =>
+            {
+                entity.HasIndex(job => new { job.UserId, job.CreatedAt });
+                entity.Property(job => job.JobType).HasMaxLength(64).IsRequired();
+                entity.Property(job => job.Status).HasMaxLength(64).IsRequired();
+                entity.Property(job => job.RequestJson).HasMaxLength(4000).IsRequired();
+                entity.Property(job => job.ResultJson).HasMaxLength(16000);
+                entity.Property(job => job.ErrorMessage).HasMaxLength(4000);
+                entity.Property(job => job.HangfireJobId).HasMaxLength(128);
             });
 
             builder.Entity<Report>(entity =>

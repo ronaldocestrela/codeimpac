@@ -1,5 +1,7 @@
 using CodeImpact.Application;
 using CodeImpact.Infrastructure;
+using Hangfire;
+using Hangfire.SqlServer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi;
@@ -12,6 +14,24 @@ namespace CodeImpact.WebApi.Extensions
         {
             services.AddApplicationServices();
             services.AddInfrastructureServices(configuration);
+
+            var connectionString = configuration.GetConnectionString("DefaultConnection")
+                                   ?? throw new InvalidOperationException("Connection string 'DefaultConnection' nao configurada.");
+
+            services.AddHangfire(config => config
+                .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+                .UseSimpleAssemblyNameTypeSerializer()
+                .UseRecommendedSerializerSettings()
+                .UseSqlServerStorage(connectionString, new SqlServerStorageOptions
+                {
+                    CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
+                    SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
+                    QueuePollInterval = TimeSpan.FromSeconds(15),
+                    UseRecommendedIsolationLevel = true,
+                    DisableGlobalLocks = true
+                }));
+
+            services.AddHangfireServer();
             services.AddControllers();
             services.AddEndpointsApiExplorer();
             services.AddOpenApi(options =>

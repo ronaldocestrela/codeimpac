@@ -1,11 +1,12 @@
 using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using CodeImpact.Application.BackgroundJobs.Commands;
+using CodeImpact.Application.BackgroundJobs.Queries;
 using CodeImpact.Application.Common.Interfaces;
 using CodeImpact.Application.GitHub.Commands;
 using CodeImpact.Application.GitHub.Dto;
 using CodeImpact.Application.GitHub.Queries;
-using CodeImpact.Application.Reports.Commands;
 using CodeImpact.Application.Reports.Dto;
 using CodeImpact.Application.Reports.Queries;
 using MediatR;
@@ -170,8 +171,8 @@ namespace CodeImpact.WebApi.Controllers
 
             try
             {
-                var summary = await _mediator.Send(new GenerateContributionSummaryQuery(userId, request.RepositoryId, request.From, request.To));
-                return Ok(summary);
+                var job = await _mediator.Send(new EnqueueContributionSummaryJobCommand(userId, request.RepositoryId, request.From, request.To));
+                return Accepted(job);
             }
             catch (InvalidOperationException ex)
             {
@@ -226,13 +227,31 @@ namespace CodeImpact.WebApi.Controllers
 
             try
             {
-                var report = await _mediator.Send(new GenerateExecutiveReportCommand(userId, request.RepositoryId, request.From, request.To));
-                return Ok(report);
+                var job = await _mediator.Send(new EnqueueExecutiveReportJobCommand(userId, request.RepositoryId, request.From, request.To));
+                return Accepted(job);
             }
             catch (InvalidOperationException ex)
             {
                 return BadRequest(new { Message = ex.Message });
             }
+        }
+
+        [HttpGet("jobs/{taskId:guid}")]
+        public async Task<IActionResult> GetBackgroundJobStatus(Guid taskId)
+        {
+            var userId = GetUserId();
+            if (userId == Guid.Empty)
+            {
+                return Unauthorized();
+            }
+
+            var job = await _mediator.Send(new GetBackgroundJobStatusQuery(userId, taskId));
+            if (job is null)
+            {
+                return NotFound();
+            }
+
+            return Ok(job);
         }
 
         [HttpGet("reports")]
