@@ -39,6 +39,7 @@ namespace CodeImpact.Infrastructure
             services.AddScoped<IGitHubCommitRepository, GitHubCommitRepository>();
             services.AddScoped<IGitHubPullRequestRepository, GitHubPullRequestRepository>();
             services.AddScoped<IGitHubPullRequestReviewRepository, GitHubPullRequestReviewRepository>();
+            services.AddScoped<IReportRepository, ReportRepository>();
 
             var jwtSettings = configuration.GetSection(JwtSettingsSectionName).Get<JwtSettings>();
             var key = Encoding.UTF8.GetBytes(jwtSettings?.Secret ?? string.Empty);

@@ -7,6 +7,7 @@ import GitHubOAuthCallbackPage from './pages/GitHubOAuthCallbackPage'
 import RepositorySelectionPage from './pages/RepositorySelectionPage'
 import ContributionsPage from './pages/ContributionsPage'
 import ContributionDetailPage from './pages/ContributionDetailPage'
+import ReportsPage from './pages/ReportsPage'
 import ProtectedRoute from './routes/ProtectedRoute'
 import { useAuthStore } from './store/authStore'
 import { getMe, refreshToken as refreshSession } from './services/auth'
@@ -63,6 +64,7 @@ export default function App() {
             <Link to="/register">Cadastro</Link>
             <Link to="/dashboard">Dashboard</Link>
             <Link to="/contributions">Contribuições</Link>
+            <Link to="/reports">Relatórios</Link>
           </nav>
         </div>
       </header>
@@ -76,6 +78,7 @@ export default function App() {
           <Route path="/github/repositories" element={<ProtectedRoute><RepositorySelectionPage /></ProtectedRoute>} />
           <Route path="/contributions" element={<ProtectedRoute><ContributionsPage /></ProtectedRoute>} />
           <Route path="/contributions/:type/:id" element={<ProtectedRoute><ContributionDetailPage /></ProtectedRoute>} />
+          <Route path="/reports" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
         </Routes>
       </main>
     </div>

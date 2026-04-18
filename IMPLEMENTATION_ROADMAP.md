@@ -55,6 +55,8 @@
 4. Store results
 5. Generate report for leadership presentation
 
+*Status: Implemented — Report entity and persistence were added with EF migration, executive schema (scope, KPIs, narrative, highlights, risks, evidence) is defined, contribution aggregation (commits + PR dimensions) is deterministic, reports are stored and retrievable, and leadership-ready report generation is available via API and frontend reports page.*
+
 # Phase 7 — Frontend Features
 1. Dashboard
 2. Contributions page

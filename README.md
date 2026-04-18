@@ -21,7 +21,9 @@ CodeImpact is a SaaS platform for GitHub contribution analysis and AI-generated 
 - Phase 1: Foundation is implemented for backend authentication and persistence.
 - Phase 2: Frontend auth setup is implemented, including login/register pages, token storage, and protected routing.
 - Phase 3: GitHub integration is implemented end-to-end, including OAuth link, repository listing, repository selection persistence, and manual pull request sync trigger.
-- Phase 4 and later remain pending for contribution persistence/classification, AI generation, and reporting.
+- Phase 4: Contribution list/detail APIs and evidence mapping are available.
+- Phase 5: AI summary orchestration is implemented with deterministic prompt building and evidence traceability.
+- Phase 6: Executive report generation and persistence are implemented end-to-end (API + frontend).
 
 ## What is implemented
 ### Backend
@@ -38,6 +40,12 @@ CodeImpact is a SaaS platform for GitHub contribution analysis and AI-generated 
   - Domain/repository support for `GitHubAccount`
   - Domain/repository support for persisted repository selection per user
   - Application/MediatR handlers for linking GitHub accounts, fetching repositories, saving selected repositories, and triggering PR sync fetch
+- Reporting:
+  - `Report` entity persisted via EF Core migration
+  - Report generation endpoint `POST /api/github/reports`
+  - Report history endpoint `GET /api/github/reports`
+  - Report detail endpoint `GET /api/github/reports/{reportId}`
+  - Executive report schema with KPI metrics, summary, highlights, risks/recommendations, and evidence IDs
 - CORS enabled for `http://localhost:5173` for frontend development
 - Clean Architecture layering: Domain, Application, Infrastructure, WebApi
 
@@ -62,6 +70,7 @@ CodeImpact is a SaaS platform for GitHub contribution analysis and AI-generated 
 - Complete user profile management and dashboard features
 - Data fetching for GitHub contributions and reports
 - UI for repository selection and contribution details
+- Reports page for generating and viewing executive reports
 - More comprehensive frontend integration tests and e2e coverage
 
 ### Backend / Future Phases
@@ -69,7 +78,6 @@ CodeImpact is a SaaS platform for GitHub contribution analysis and AI-generated 
 - Repository sync and PR fetching (started, manual sync placeholder implemented)
 - Contribution storage and listing
 - AI integration via `IAIOrchestrator` and prompt generation
-- Report generation and aggregation
 - Hangfire background jobs for long-running processing
 - Export features (Markdown, PDF, DOCX)
 - Production hardening, Docker, CI/CD, logging and monitoring

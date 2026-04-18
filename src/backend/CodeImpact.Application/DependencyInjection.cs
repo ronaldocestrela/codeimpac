@@ -13,6 +13,7 @@ namespace CodeImpact.Application
             services.AddMediatR(Assembly.GetExecutingAssembly());
             services.AddScoped<IContributionPromptBuilder, ContributionPromptBuilder>();
             services.AddScoped<IAIOrchestrator, AIOrchestrator>();
+            services.AddScoped<IExecutiveReportOrchestrator, ExecutiveReportOrchestrator>();
             return services;
         }
     }

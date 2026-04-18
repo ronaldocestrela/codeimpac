@@ -5,6 +5,9 @@ using CodeImpact.Application.Common.Interfaces;
 using CodeImpact.Application.GitHub.Commands;
 using CodeImpact.Application.GitHub.Dto;
 using CodeImpact.Application.GitHub.Queries;
+using CodeImpact.Application.Reports.Commands;
+using CodeImpact.Application.Reports.Dto;
+using CodeImpact.Application.Reports.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -192,6 +195,57 @@ namespace CodeImpact.WebApi.Controllers
             }
 
             return Ok(contribution);
+        }
+
+        [HttpPost("reports")]
+        public async Task<IActionResult> GenerateExecutiveReport([FromBody] GenerateExecutiveReportRequestDto request)
+        {
+            var userId = GetUserId();
+            if (userId == Guid.Empty)
+            {
+                return Unauthorized();
+            }
+
+            try
+            {
+                var report = await _mediator.Send(new GenerateExecutiveReportCommand(userId, request.RepositoryId, request.From, request.To));
+                return Ok(report);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
+        }
+
+        [HttpGet("reports")]
+        public async Task<IActionResult> GetExecutiveReports([FromQuery] long? repositoryId, [FromQuery] DateTime? from, [FromQuery] DateTime? to)
+        {
+            var userId = GetUserId();
+            if (userId == Guid.Empty)
+            {
+                return Unauthorized();
+            }
+
+            var reports = await _mediator.Send(new GetExecutiveReportsQuery(userId, repositoryId, from, to));
+            return Ok(reports);
+        }
+
+        [HttpGet("reports/{reportId:guid}")]
+        public async Task<IActionResult> GetExecutiveReportDetail(Guid reportId)
+        {
+            var userId = GetUserId();
+            if (userId == Guid.Empty)
+            {
+                return Unauthorized();
+            }
+
+            var report = await _mediator.Send(new GetExecutiveReportDetailQuery(userId, reportId));
+            if (report is null)
+            {
+                return NotFound();
+            }
+
+            return Ok(report);
         }
 
         private Guid GetUserId()

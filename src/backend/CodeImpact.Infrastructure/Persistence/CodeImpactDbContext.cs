@@ -20,6 +20,7 @@ namespace CodeImpact.Infrastructure.Persistence
         public DbSet<GitHubCommit> GitHubCommits { get; set; } = null!;
         public DbSet<GitHubPullRequest> GitHubPullRequests { get; set; } = null!;
         public DbSet<GitHubPullRequestReview> GitHubPullRequestReviews { get; set; } = null!;
+        public DbSet<Report> Reports { get; set; } = null!;
         public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder builder)
@@ -80,6 +81,17 @@ namespace CodeImpact.Infrastructure.Persistence
             {
                 entity.HasIndex(rt => rt.Token).IsUnique();
                 entity.Property(rt => rt.Token).HasMaxLength(512).IsRequired();
+            });
+
+            builder.Entity<Report>(entity =>
+            {
+                entity.HasIndex(r => new { r.UserId, r.GeneratedAt });
+                entity.Property(r => r.DeveloperScope).HasMaxLength(256).IsRequired();
+                entity.Property(r => r.RepositoriesJson).HasMaxLength(4000).IsRequired();
+                entity.Property(r => r.ExecutiveSummary).HasMaxLength(8000).IsRequired();
+                entity.Property(r => r.HighlightsJson).HasMaxLength(8000).IsRequired();
+                entity.Property(r => r.RisksJson).HasMaxLength(8000).IsRequired();
+                entity.Property(r => r.EvidenceJson).HasMaxLength(16000).IsRequired();
             });
         }
     }
