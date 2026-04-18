@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\src\backend\CodeImpact.Application\CodeImpact.Application.csproj" />
+    <ProjectReference Include="..\src\backend\CodeImpact.Infrastructure\CodeImpact.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
