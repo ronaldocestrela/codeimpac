@@ -19,10 +19,12 @@
 *Status: Phase 2 implemented — login/register, auth state, refresh handling, and protected routes are available.*
 
 # Phase 3 — GitHub Integration
-1. Implement GitHub OAuth
-2. Fetch repositories
-3. Select repositories
-4. Sync Pull Requests
+1. Implement GitHub OAuth (implemented)
+2. Fetch repositories (implemented)
+3. Select repositories (implemented with persistence)
+4. Sync Pull Requests (implemented as real GitHub fetch trigger, no PR persistence)
+
+*Status: Phase 3 implemented end-to-end (backend + frontend). Persistência detalhada de PRs permanece na Fase 4.*
 
 # Phase 4 — Contributions
 1. Store PRs

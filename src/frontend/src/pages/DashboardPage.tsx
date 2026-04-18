@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
+import { getGitHubAuthorizeUrl } from '../services/github'
 import { getMe } from '../services/auth'
 
 export default function DashboardPage() {
@@ -24,9 +25,23 @@ export default function DashboardPage() {
     }
   }, [user, logout, navigate])
 
+  const [loadingGitHub, setLoadingGitHub] = useState(false)
+
   const handleLogout = () => {
     logout()
     navigate('/login')
+  }
+
+  const beginGitHubLink = async () => {
+    setLoadingGitHub(true)
+    try {
+      const response = await getGitHubAuthorizeUrl()
+      window.location.href = response.url
+    } catch {
+      setMessage('Falha ao iniciar o fluxo GitHub. Tente novamente.')
+    } finally {
+      setLoadingGitHub(false)
+    }
   }
 
   return (
@@ -48,6 +63,17 @@ export default function DashboardPage() {
           <p className="text-sm text-gray-500">ID: {user.subject}</p>
         </div>
       )}
+
+      <div className="mt-6 rounded-lg border border-gray-200 p-4">
+        <p className="text-sm text-gray-600">Integração GitHub</p>
+        <button
+          onClick={beginGitHubLink}
+          disabled={loadingGitHub}
+          className="mt-4 rounded-md bg-slate-800 px-4 py-2 text-white hover:bg-slate-900 disabled:opacity-60"
+        >
+          {loadingGitHub ? 'Redirecionando para o GitHub...' : 'Conectar GitHub'}
+        </button>
+      </div>
     </div>
   )
 }

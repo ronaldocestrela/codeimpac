@@ -1,9 +1,11 @@
 using CodeImpact.Application.Common.Interfaces;
+using CodeImpact.Domain.Repositories;
 using CodeImpact.Infrastructure.Identity;
 using CodeImpact.Infrastructure.Persistence;
 using CodeImpact.Infrastructure.Services;
 using CodeImpact.Infrastructure.Settings;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -25,6 +27,13 @@ namespace CodeImpact.Infrastructure
             services.AddIdentity<AppUser, IdentityRole<Guid>>()
                 .AddEntityFrameworkStores<CodeImpactDbContext>()
                 .AddDefaultTokenProviders();
+
+            services.AddDataProtection();
+            services.Configure<GitHubSettings>(configuration.GetSection(GitHubSettingsSectionName));
+            services.AddHttpClient<IGitHubService, GitHubService>();
+            services.AddScoped<IGitHubTokenProtector, GitHubTokenProtector>();
+            services.AddScoped<IGitHubAccountRepository, GitHubAccountRepository>();
+            services.AddScoped<IGitHubRepositorySelectionRepository, GitHubRepositorySelectionRepository>();
 
             var jwtSettings = configuration.GetSection(JwtSettingsSectionName).Get<JwtSettings>();
             var key = Encoding.UTF8.GetBytes(jwtSettings?.Secret ?? string.Empty);
@@ -56,5 +65,6 @@ namespace CodeImpact.Infrastructure
         }
 
         public const string JwtSettingsSectionName = "JwtSettings";
+        public const string GitHubSettingsSectionName = "GitHub";
     }
 }

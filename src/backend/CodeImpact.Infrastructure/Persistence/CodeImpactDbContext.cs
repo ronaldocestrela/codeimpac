@@ -16,6 +16,7 @@ namespace CodeImpact.Infrastructure.Persistence
         public DbSet<Organization> Organizations { get; set; } = null!;
         public DbSet<UserOrganization> UserOrganizations { get; set; } = null!;
         public DbSet<GitHubAccount> GitHubAccounts { get; set; } = null!;
+        public DbSet<GitHubRepositorySelection> GitHubRepositorySelections { get; set; } = null!;
         public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder builder)
@@ -33,6 +34,13 @@ namespace CodeImpact.Infrastructure.Persistence
                 entity.HasIndex(g => g.GitHubUserId).IsUnique();
                 entity.Property(g => g.GitHubUsername).HasMaxLength(256).IsRequired();
                 entity.Property(g => g.EncryptedAccessToken).HasMaxLength(2048).IsRequired();
+            });
+
+            builder.Entity<GitHubRepositorySelection>(entity =>
+            {
+                entity.HasIndex(g => new { g.UserId, g.RepositoryId }).IsUnique();
+                entity.Property(g => g.Name).HasMaxLength(256).IsRequired();
+                entity.Property(g => g.FullName).HasMaxLength(512).IsRequired();
             });
 
             builder.Entity<RefreshToken>(entity =>

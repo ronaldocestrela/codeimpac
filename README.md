@@ -20,7 +20,8 @@ CodeImpact is a SaaS platform for GitHub contribution analysis and AI-generated 
 ## Current Status
 - Phase 1: Foundation is implemented for backend authentication and persistence.
 - Phase 2: Frontend auth setup is implemented, including login/register pages, token storage, and protected routing.
-- Phase 3 and later phases remain pending for GitHub integration, contributions, AI generation, and reporting.
+- Phase 3: GitHub integration is implemented end-to-end, including OAuth link, repository listing, repository selection persistence, and manual pull request sync trigger.
+- Phase 4 and later remain pending for contribution persistence/classification, AI generation, and reporting.
 
 ## What is implemented
 ### Backend
@@ -32,6 +33,11 @@ CodeImpact is a SaaS platform for GitHub contribution analysis and AI-generated 
   - `POST /api/auth/refresh`
 - `TokenService` for access token and refresh token generation
 - `RefreshToken` entity with expiration and revocation support
+- GitHub integration scaffolding:
+  - `GitHubController` with authorization URL, OAuth callback, repository listing and sync trigger
+  - Domain/repository support for `GitHubAccount`
+  - Domain/repository support for persisted repository selection per user
+  - Application/MediatR handlers for linking GitHub accounts, fetching repositories, saving selected repositories, and triggering PR sync fetch
 - CORS enabled for `http://localhost:5173` for frontend development
 - Clean Architecture layering: Domain, Application, Infrastructure, WebApi
 
@@ -59,8 +65,8 @@ CodeImpact is a SaaS platform for GitHub contribution analysis and AI-generated 
 - More comprehensive frontend integration tests and e2e coverage
 
 ### Backend / Future Phases
-- GitHub OAuth integration
-- Repository sync and PR fetching
+- GitHub OAuth integration (started)
+- Repository sync and PR fetching (started, manual sync placeholder implemented)
 - Contribution storage and listing
 - AI integration via `IAIOrchestrator` and prompt generation
 - Report generation and aggregation
