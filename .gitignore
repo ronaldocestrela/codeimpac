@@ -1,0 +1,70 @@
+# Build / bin / obj
+bin/
+obj/
+out/
+
+# Visual Studio & VS Code
+.vs/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# JetBrains Rider
+.idea/
+
+# NuGet
+*.nupkg
+packages/
+
+# Dotnet
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Publish
+publish/
+
+# ASP.NET Core
+appsettings.Development.json
+secrets.json
+secrets.*
+
+# EF Core
+# (migrations should be tracked; ignore local DB files)
+*.mdf
+*.ldf
+*.sqlite
+
+# Logs
+logs/
+*.log
+
+# Test results / coverage
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env
+.env.*
+
+# Certificates
+*.pfx
+
+# VS Code workspace storage
+.vscode/.history/
+
+# Misc
+*.bak
+*.tmp
+
+# Ignore user-specific files
+*.local
+

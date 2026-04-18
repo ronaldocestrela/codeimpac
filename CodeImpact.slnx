@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/backend/">
+    <Project Path="src/backend/CodeImpact.Application/CodeImpact.Application.csproj" />
+    <Project Path="src/backend/CodeImpact.Domain/CodeImpact.Domain.csproj" />
+    <Project Path="src/backend/CodeImpact.Infrastructure/CodeImpact.Infrastructure.csproj" />
+    <Project Path="src/backend/CodeImpact.WebApi/CodeImpact.WebApi.csproj" />
+  </Folder>
+  <Project Path="CodeImpact.Tests/CodeImpact.Tests.csproj" />
+</Solution>

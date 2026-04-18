@@ -1,0 +1,108 @@
+using System;
+using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
+using System.Threading.Tasks;
+using CodeImpact.Application.Authentication.Dto;
+using CodeImpact.Infrastructure.Identity;
+using CodeImpact.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using CodeImpact.Application.Common.Interfaces;
+using CodeImpact.Domain.Entities;
+
+namespace CodeImpact.WebApi.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    public class AuthController : ControllerBase
+    {
+        private readonly UserManager<AppUser> _userManager;
+        private readonly SignInManager<AppUser> _signInManager;
+        private readonly CodeImpactDbContext _dbContext;
+        private readonly ITokenService _tokenService;
+        private readonly ILogger<AuthController> _logger;
+
+        public AuthController(
+            UserManager<AppUser> userManager,
+            SignInManager<AppUser> signInManager,
+            CodeImpactDbContext dbContext,
+            ITokenService tokenService,
+            ILogger<AuthController> logger)
+        {
+            _userManager = userManager;
+            _signInManager = signInManager;
+            _dbContext = dbContext;
+            _tokenService = tokenService;
+            _logger = logger;
+        }
+
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] LoginRequestDto request)
+        {
+            var existingUser = await _userManager.FindByEmailAsync(request.Email);
+            if (existingUser is not null)
+            {
+                return Conflict(new { Message = "Email already registered." });
+            }
+
+            var user = new AppUser
+            {
+                UserName = request.Email,
+                Email = request.Email,
+                FullName = request.Email.Split('@')[0]
+            };
+
+            var result = await _userManager.CreateAsync(user, request.Password);
+            if (!result.Succeeded)
+            {
+                return BadRequest(result.Errors.Select(e => e.Description));
+            }
+
+            var accessToken = await _tokenService.CreateAccessTokenAsync(user.Id, user.Email ?? string.Empty, Array.Empty<string>());
+            var refreshToken = await _tokenService.CreateRefreshTokenAsync();
+
+            var refreshTokenEntity = new RefreshToken(user.Id, refreshToken, DateTime.UtcNow.AddDays(30));
+            _dbContext.RefreshTokens.Add(refreshTokenEntity);
+            await _dbContext.SaveChangesAsync();
+
+            return Created(string.Empty, new AuthResultDto(accessToken, refreshToken));
+        }
+
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
+        {
+            var user = await _userManager.FindByEmailAsync(request.Email);
+            if (user is null)
+            {
+                return Unauthorized();
+            }
+
+            var result = await _signInManager.CheckPasswordSignInAsync(user, request.Password, false);
+            if (!result.Succeeded)
+            {
+                return Unauthorized();
+            }
+
+            var accessToken = await _tokenService.CreateAccessTokenAsync(user.Id, user.Email ?? string.Empty, Array.Empty<string>());
+            var refreshToken = await _tokenService.CreateRefreshTokenAsync();
+
+            var refreshTokenEntity = new RefreshToken(user.Id, refreshToken, DateTime.UtcNow.AddDays(30));
+            _dbContext.RefreshTokens.Add(refreshTokenEntity);
+            await _dbContext.SaveChangesAsync();
+
+            return Ok(new AuthResultDto(accessToken, refreshToken));
+        }
+
+        [Authorize]
+        [HttpGet("me")]
+        public IActionResult Me()
+        {
+            var email = User.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
+            var subject = User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value;
+            return Ok(new { Email = email, Subject = subject });
+        }
+    }
+}
