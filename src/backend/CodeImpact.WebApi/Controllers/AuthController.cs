@@ -104,5 +104,40 @@ namespace CodeImpact.WebApi.Controllers
             var subject = User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value;
             return Ok(new { Email = email, Subject = subject });
         }
+
+        [HttpPost("refresh")]
+        public async Task<IActionResult> Refresh([FromBody] CodeImpact.Application.Authentication.Dto.RefreshRequestDto request)
+        {
+            var refreshToken = request.RefreshToken;
+            if (string.IsNullOrWhiteSpace(refreshToken))
+            {
+                return BadRequest(new { Message = "Refresh token required." });
+            }
+
+            var refreshEntity = await _dbContext.RefreshTokens.FirstOrDefaultAsync(r => r.Token == refreshToken);
+            if (refreshEntity is null || !refreshEntity.IsActive)
+            {
+                return Unauthorized();
+            }
+
+            var user = await _userManager.FindByIdAsync(refreshEntity.UserId.ToString());
+            if (user is null)
+            {
+                return Unauthorized();
+            }
+
+            // Revoke current refresh token and issue a new pair
+            refreshEntity.Revoke();
+            _dbContext.RefreshTokens.Update(refreshEntity);
+
+            var newAccessToken = await _tokenService.CreateAccessTokenAsync(user.Id, user.Email ?? string.Empty, Array.Empty<string>());
+            var newRefreshToken = await _tokenService.CreateRefreshTokenAsync();
+
+            var newRefreshEntity = new RefreshToken(user.Id, newRefreshToken, DateTime.UtcNow.AddDays(30));
+            _dbContext.RefreshTokens.Add(newRefreshEntity);
+            await _dbContext.SaveChangesAsync();
+
+            return Ok(new AuthResultDto(newAccessToken, newRefreshToken));
+        }
     }
 }
