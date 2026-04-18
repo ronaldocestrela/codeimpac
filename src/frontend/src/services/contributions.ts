@@ -1,12 +1,14 @@
 import api from './api'
-import type { ContributionDetail, ContributionListItem, ContributionsFilters } from '../types/contributions'
+import type { ContributionDetail, ContributionsFilters, PagedContributions } from '../types/contributions'
 
-export const getContributions = async (filters: ContributionsFilters = {}): Promise<ContributionListItem[]> => {
-  const response = await api.get<ContributionListItem[]>('github/contributions', {
+export const getContributions = async (filters: ContributionsFilters = {}): Promise<PagedContributions> => {
+  const response = await api.get<PagedContributions>('github/contributions', {
     params: {
       repositoryId: filters.repositoryId,
       from: filters.from,
-      to: filters.to
+      to: filters.to,
+      page: filters.page,
+      pageSize: filters.pageSize
     }
   })
 

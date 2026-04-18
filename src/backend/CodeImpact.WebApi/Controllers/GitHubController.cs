@@ -142,7 +142,12 @@ namespace CodeImpact.WebApi.Controllers
         }
 
         [HttpGet("contributions")]
-        public async Task<IActionResult> GetContributions([FromQuery] long? repositoryId, [FromQuery] DateTime? from, [FromQuery] DateTime? to)
+        public async Task<IActionResult> GetContributions(
+            [FromQuery] long? repositoryId,
+            [FromQuery] DateTime? from,
+            [FromQuery] DateTime? to,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20)
         {
             var userId = GetUserId();
             if (userId == Guid.Empty)
@@ -152,7 +157,7 @@ namespace CodeImpact.WebApi.Controllers
 
             try
             {
-                var contributions = await _mediator.Send(new GetContributionsQuery(userId, repositoryId, from, to));
+                var contributions = await _mediator.Send(new GetContributionsQuery(userId, repositoryId, from, to, page, pageSize));
                 return Ok(contributions);
             }
             catch (InvalidOperationException ex)

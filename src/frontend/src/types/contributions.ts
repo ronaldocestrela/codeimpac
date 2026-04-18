@@ -41,4 +41,19 @@ export interface ContributionsFilters {
   repositoryId?: number
   from?: string
   to?: string
+  page?: number
+  pageSize?: number
+}
+
+export interface PagedContributions {
+  items: ContributionListItem[]
+  totalCount: number
+  commitCount: number
+  pullRequestCount: number
+  approvedPullRequestCount: number
+  page: number
+  pageSize: number
+  totalPages: number
+  hasPreviousPage: boolean
+  hasNextPage: boolean
 }

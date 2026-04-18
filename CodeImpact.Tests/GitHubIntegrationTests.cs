@@ -323,12 +323,43 @@ public class GitHubIntegrationTests
 
         var handler = new GetContributionsQueryHandler(commitRepository, pullRequestRepository);
 
-        var result = await handler.Handle(new GetContributionsQuery(userId, null, null, null), CancellationToken.None);
+        var result = await handler.Handle(new GetContributionsQuery(userId, null, null, null, 1, 20), CancellationToken.None);
 
-        Assert.Equal(2, result.Count);
-        Assert.Equal("pull_request", result.First().Type);
-        Assert.Equal("approved", result.First().Status);
-        Assert.Equal("commit", result.Last().Type);
+        Assert.Equal(2, result.TotalCount);
+        Assert.Equal(1, result.Page);
+        Assert.Equal(1, result.TotalPages);
+        Assert.Equal("pull_request", result.Items.First().Type);
+        Assert.Equal("approved", result.Items.First().Status);
+        Assert.Equal("commit", result.Items.Last().Type);
+    }
+
+    [Fact]
+    public async Task GetContributionsQueryHandler_AppliesPaginationCorrectly()
+    {
+        var userId = Guid.NewGuid();
+        var now = DateTime.UtcNow;
+
+        var commitRepository = new StubGitHubCommitRepository
+        {
+            ListByUserAsyncDelegate = (_, _, _, _) => Task.FromResult<IReadOnlyCollection<GitHubCommit>>(new[]
+            {
+                new GitHubCommit(userId, Guid.NewGuid(), 100, "octocat/repo", "sha-1", "commit-1", "Octo", "octo@example.com", now.AddMinutes(-3), "https://github.com/octocat/repo/commit/sha-1"),
+                new GitHubCommit(userId, Guid.NewGuid(), 100, "octocat/repo", "sha-2", "commit-2", "Octo", "octo@example.com", now.AddMinutes(-2), "https://github.com/octocat/repo/commit/sha-2"),
+                new GitHubCommit(userId, Guid.NewGuid(), 100, "octocat/repo", "sha-3", "commit-3", "Octo", "octo@example.com", now.AddMinutes(-1), "https://github.com/octocat/repo/commit/sha-3")
+            })
+        };
+
+        var handler = new GetContributionsQueryHandler(commitRepository, new StubGitHubPullRequestRepository());
+
+        var result = await handler.Handle(new GetContributionsQuery(userId, null, null, null, 2, 2), CancellationToken.None);
+
+        Assert.Equal(3, result.TotalCount);
+        Assert.Equal(2, result.TotalPages);
+        Assert.Equal(2, result.Page);
+        Assert.Single(result.Items);
+        Assert.Equal("commit-1", result.Items.Single().Title);
+        Assert.True(result.HasPreviousPage);
+        Assert.False(result.HasNextPage);
     }
 
     [Fact]
@@ -339,7 +370,7 @@ public class GitHubIntegrationTests
 
         await Assert.ThrowsAsync<InvalidOperationException>(async () =>
             await handler.Handle(
-                new GetContributionsQuery(userId, null, DateTime.UtcNow, DateTime.UtcNow.AddDays(-1)),
+                new GetContributionsQuery(userId, null, DateTime.UtcNow, DateTime.UtcNow.AddDays(-1), 1, 20),
                 CancellationToken.None));
     }
 

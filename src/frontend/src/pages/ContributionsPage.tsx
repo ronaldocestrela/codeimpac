@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { getContributions } from '../services/contributions'
@@ -14,12 +14,20 @@ export default function ContributionsPage() {
   const [repositoryId, setRepositoryId] = useState('')
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(20)
 
   const filters = useMemo(() => ({
     repositoryId: repositoryId ? Number(repositoryId) : undefined,
     from: from || undefined,
-    to: to || undefined
-  }), [repositoryId, from, to])
+    to: to || undefined,
+    page,
+    pageSize
+  }), [repositoryId, from, to, page, pageSize])
+
+  useEffect(() => {
+    setPage(1)
+  }, [repositoryId, from, to])
 
   const repositoriesQuery = useQuery({
     queryKey: ['contributions-repositories'],
@@ -38,26 +46,24 @@ export default function ContributionsPage() {
     queryFn: () => getContributions(filters)
   })
 
-  const contributions = contributionsQuery.data ?? []
+  const contributionsPage = contributionsQuery.data
+  const contributions = contributionsPage?.items ?? []
   const repositories = repositoriesQuery.data ?? []
 
   const metrics = useMemo(() => {
-    const commits = contributions.filter(item => item.type === 'commit').length
-    const pullRequests = contributions.filter(item => item.type === 'pull_request').length
-    const approvedPullRequests = contributions.filter(item => item.type === 'pull_request' && item.isApproved === true).length
-
     return {
-      total: contributions.length,
-      commits,
-      pullRequests,
-      approvedPullRequests
+      total: contributionsPage?.totalCount ?? 0,
+      commits: contributionsPage?.commitCount ?? 0,
+      pullRequests: contributionsPage?.pullRequestCount ?? 0,
+      approvedPullRequests: contributionsPage?.approvedPullRequestCount ?? 0
     }
-  }, [contributions])
+  }, [contributionsPage])
 
   const clearFilters = () => {
     setRepositoryId('')
     setFrom('')
     setTo('')
+    setPage(1)
   }
 
   return (
@@ -146,40 +152,83 @@ export default function ContributionsPage() {
         )}
 
         {!contributionsQuery.isLoading && !contributionsQuery.isError && contributions.length > 0 && (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-left text-sm">
-              <thead>
-                <tr className="border-b text-slate-500">
-                  <th className="px-3 py-2">Tipo</th>
-                  <th className="px-3 py-2">Título</th>
-                  <th className="px-3 py-2">Status</th>
-                  <th className="px-3 py-2">Autor</th>
-                  <th className="px-3 py-2">Repositório</th>
-                  <th className="px-3 py-2">Data</th>
-                  <th className="px-3 py-2">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {contributions.map(item => (
-                  <tr key={item.id} className="border-b last:border-0">
-                    <td className="px-3 py-2">{item.type === 'pull_request' ? 'PR' : 'Commit'}</td>
-                    <td className="px-3 py-2">{item.title}</td>
-                    <td className="px-3 py-2">{item.status}</td>
-                    <td className="px-3 py-2">{item.author}</td>
-                    <td className="px-3 py-2">{item.repositoryFullName}</td>
-                    <td className="px-3 py-2">{new Date(item.occurredAt).toLocaleString()}</td>
-                    <td className="px-3 py-2">
-                      <Link
-                        to={item.type === 'pull_request' ? `/contributions/pull-requests/${item.id}` : `/contributions/commits/${item.id}`}
-                        className="text-indigo-600 hover:underline"
-                      >
-                        Detalhar
-                      </Link>
-                    </td>
+          <div className="space-y-4">
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b text-slate-500">
+                    <th className="px-3 py-2">Tipo</th>
+                    <th className="px-3 py-2">Título</th>
+                    <th className="px-3 py-2">Status</th>
+                    <th className="px-3 py-2">Autor</th>
+                    <th className="px-3 py-2">Repositório</th>
+                    <th className="px-3 py-2">Data</th>
+                    <th className="px-3 py-2">Ações</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {contributions.map(item => (
+                    <tr key={item.id} className="border-b last:border-0">
+                      <td className="px-3 py-2">{item.type === 'pull_request' ? 'PR' : 'Commit'}</td>
+                      <td className="px-3 py-2">{item.title}</td>
+                      <td className="px-3 py-2">{item.status}</td>
+                      <td className="px-3 py-2">{item.author}</td>
+                      <td className="px-3 py-2">{item.repositoryFullName}</td>
+                      <td className="px-3 py-2">{new Date(item.occurredAt).toLocaleString()}</td>
+                      <td className="px-3 py-2">
+                        <Link
+                          to={item.type === 'pull_request' ? `/contributions/pull-requests/${item.id}` : `/contributions/commits/${item.id}`}
+                          className="text-indigo-600 hover:underline"
+                        >
+                          Detalhar
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="flex flex-col gap-3 border-t border-slate-200 pt-3 text-sm text-slate-700 md:flex-row md:items-center md:justify-between">
+              <p>
+                Pagina {contributionsPage?.page ?? 1} de {contributionsPage?.totalPages ?? 1} | Total: {formatNumber(contributionsPage?.totalCount ?? 0)}
+              </p>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="flex items-center gap-2 text-slate-700">
+                  <span>Itens por pagina</span>
+                  <select
+                    value={pageSize}
+                    onChange={event => {
+                      setPageSize(Number(event.target.value))
+                      setPage(1)
+                    }}
+                    disabled={contributionsQuery.isFetching}
+                    className="rounded border border-slate-300 px-2 py-1.5 text-sm"
+                  >
+                    <option value={10}>10</option>
+                    <option value={20}>20</option>
+                    <option value={50}>50</option>
+                  </select>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setPage(current => Math.max(1, current - 1))}
+                  disabled={!contributionsPage?.hasPreviousPage || contributionsQuery.isFetching}
+                  className="rounded border border-slate-300 px-3 py-1.5 text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Anterior
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPage(current => current + 1)}
+                  disabled={!contributionsPage?.hasNextPage || contributionsQuery.isFetching}
+                  className="rounded border border-slate-300 px-3 py-1.5 text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Proxima
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </section>
