@@ -22,34 +22,41 @@
 1. Implement GitHub OAuth (implemented)
 2. Fetch repositories (implemented)
 3. Select repositories (implemented with persistence)
-4. Sync Pull Requests (implemented as real GitHub fetch trigger, no PR persistence)
+4. Sync Pull Requests (implemented as real GitHub fetch trigger)
+5. Sync commits for selected repositories (pending)
+6. Sync PR reviews and approval events (pending)
 
-*Status: Phase 3 implemented end-to-end (backend + frontend). Persistência detalhada de PRs permanece na Fase 4.*
+*Status: OAuth + repository selection are implemented. Commit sync and PR review/approval ingestion are required to complete the domain premise.*
 
 # Phase 4 — Contributions
-1. Store PRs
-2. List contributions
-3. Detail contribution
-4. Basic classification (no AI)
+1. Store commits
+2. Store PRs and PR reviews
+3. Define and persist approved PR classification rules (`APPROVED` review state)
+4. List contributions (commits + PRs)
+5. Detail contribution with evidence links
+6. Basic classification (no AI)
 
 # Phase 5 — AI Integration
 1. Create ILLMService
 2. Implement OpenAIService
 3. Create PromptBuilder
 4. Create AIOrchestrator
-5. Generate summaries
+5. Generate summaries from commits and approved PRs
+6. Generate manager-oriented highlights with evidence references
 
 # Phase 6 — Reports
 1. Create Report entity
-2. Generate report
+2. Define executive report schema (KPIs + narrative + evidence)
 3. Aggregate contributions
 4. Store results
+5. Generate report for leadership presentation
 
 # Phase 7 — Frontend Features
 1. Dashboard
 2. Contributions page
 3. Report page
-4. Export UI
+4. Repository and period filters for report scope
+5. Export UI
 
 # Phase 8 — Background Jobs
 1. Setup Hangfire

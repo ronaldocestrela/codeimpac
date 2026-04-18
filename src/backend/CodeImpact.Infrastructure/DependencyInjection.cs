@@ -34,6 +34,9 @@ namespace CodeImpact.Infrastructure
             services.AddScoped<IGitHubTokenProtector, GitHubTokenProtector>();
             services.AddScoped<IGitHubAccountRepository, GitHubAccountRepository>();
             services.AddScoped<IGitHubRepositorySelectionRepository, GitHubRepositorySelectionRepository>();
+            services.AddScoped<IGitHubCommitRepository, GitHubCommitRepository>();
+            services.AddScoped<IGitHubPullRequestRepository, GitHubPullRequestRepository>();
+            services.AddScoped<IGitHubPullRequestReviewRepository, GitHubPullRequestReviewRepository>();
 
             var jwtSettings = configuration.GetSection(JwtSettingsSectionName).Get<JwtSettings>();
             var key = Encoding.UTF8.GetBytes(jwtSettings?.Secret ?? string.Empty);

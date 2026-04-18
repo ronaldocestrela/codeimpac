@@ -113,7 +113,67 @@ namespace CodeImpact.Infrastructure.Services
             }
 
             return pullRequests
-                .Select(pr => new GitHubPullRequestDto(pr.Id, pr.Title, pr.State, pr.HtmlUrl))
+                .Select(pr => new GitHubPullRequestDto(
+                    pr.Id,
+                    pr.Number,
+                    pr.Title,
+                    pr.State,
+                    pr.User.Login,
+                    pr.CreatedAt,
+                    pr.ClosedAt,
+                    pr.MergedAt,
+                    pr.HtmlUrl))
+                .ToList();
+        }
+
+        public async Task<IEnumerable<GitHubCommitDto>> GetCommitsAsync(string encryptedAccessToken, string repositoryFullName)
+        {
+            var accessToken = _tokenProtector.Unprotect(encryptedAccessToken);
+            var request = new HttpRequestMessage(HttpMethod.Get, $"https://api.github.com/repos/{repositoryFullName}/commits?per_page=100");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+            var response = await _httpClient.SendAsync(request);
+            response.EnsureSuccessStatusCode();
+
+            var commits = await response.Content.ReadFromJsonAsync<IEnumerable<GitHubCommitResponse>>();
+            if (commits is null)
+            {
+                return new List<GitHubCommitDto>();
+            }
+
+            return commits
+                .Select(c => new GitHubCommitDto(
+                    c.Sha,
+                    c.Commit.Message,
+                    c.Commit.Author.Name,
+                    c.Commit.Author.Email,
+                    c.Commit.Author.Date,
+                    c.HtmlUrl))
+                .ToList();
+        }
+
+        public async Task<IEnumerable<GitHubPullRequestReviewDto>> GetPullRequestReviewsAsync(string encryptedAccessToken, string repositoryFullName, int pullRequestNumber)
+        {
+            var accessToken = _tokenProtector.Unprotect(encryptedAccessToken);
+            var request = new HttpRequestMessage(HttpMethod.Get, $"https://api.github.com/repos/{repositoryFullName}/pulls/{pullRequestNumber}/reviews?per_page=100");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+            var response = await _httpClient.SendAsync(request);
+            response.EnsureSuccessStatusCode();
+
+            var reviews = await response.Content.ReadFromJsonAsync<IEnumerable<GitHubPullRequestReviewResponse>>();
+            if (reviews is null)
+            {
+                return new List<GitHubPullRequestReviewDto>();
+            }
+
+            return reviews
+                .Select(r => new GitHubPullRequestReviewDto(
+                    r.Id,
+                    r.User.Login,
+                    r.State,
+                    r.SubmittedAt,
+                    r.HtmlUrl))
                 .ToList();
         }
 
@@ -142,8 +202,37 @@ namespace CodeImpact.Infrastructure.Services
 
         private sealed record GitHubPullRequestResponse(
             [property: JsonPropertyName("id")] long Id,
+            [property: JsonPropertyName("number")] int Number,
             [property: JsonPropertyName("title")] string Title,
             [property: JsonPropertyName("state")] string State,
+            [property: JsonPropertyName("user")] GitHubSimpleUser User,
+            [property: JsonPropertyName("created_at")] DateTime CreatedAt,
+            [property: JsonPropertyName("closed_at")] DateTime? ClosedAt,
+            [property: JsonPropertyName("merged_at")] DateTime? MergedAt,
             [property: JsonPropertyName("html_url")] string HtmlUrl);
+
+        private sealed record GitHubCommitResponse(
+            [property: JsonPropertyName("sha")] string Sha,
+            [property: JsonPropertyName("commit")] GitHubCommitInner Commit,
+            [property: JsonPropertyName("html_url")] string HtmlUrl);
+
+        private sealed record GitHubCommitInner(
+            [property: JsonPropertyName("message")] string Message,
+            [property: JsonPropertyName("author")] GitHubCommitAuthor Author);
+
+        private sealed record GitHubCommitAuthor(
+            [property: JsonPropertyName("name")] string Name,
+            [property: JsonPropertyName("email")] string Email,
+            [property: JsonPropertyName("date")] DateTime Date);
+
+        private sealed record GitHubPullRequestReviewResponse(
+            [property: JsonPropertyName("id")] long Id,
+            [property: JsonPropertyName("user")] GitHubSimpleUser User,
+            [property: JsonPropertyName("state")] string State,
+            [property: JsonPropertyName("submitted_at")] DateTime SubmittedAt,
+            [property: JsonPropertyName("html_url")] string HtmlUrl);
+
+        private sealed record GitHubSimpleUser(
+            [property: JsonPropertyName("login")] string Login);
     }
 }

@@ -127,8 +127,17 @@ public class GitHubIntegrationTests
         };
         var selectionRepository = new StubGitHubRepositorySelectionRepository();
         var service = new StubGitHubService();
+        var commitRepository = new StubGitHubCommitRepository();
+        var pullRequestRepository = new StubGitHubPullRequestRepository();
+        var reviewRepository = new StubGitHubPullRequestReviewRepository();
 
-        var handler = new SyncGitHubRepositoryCommandHandler(accountRepository, selectionRepository, service);
+        var handler = new SyncGitHubRepositoryCommandHandler(
+            accountRepository,
+            selectionRepository,
+            service,
+            commitRepository,
+            pullRequestRepository,
+            reviewRepository);
 
         await Assert.ThrowsAsync<InvalidOperationException>(async () =>
             await handler.Handle(new SyncGitHubRepositoryCommand(userId, 123), CancellationToken.None));
@@ -148,14 +157,20 @@ public class GitHubIntegrationTests
             GetByUserAndRepositoryIdAsyncDelegate = (_, _) => Task.FromResult<GitHubRepositorySelection?>(null)
         };
 
-        var handler = new SyncGitHubRepositoryCommandHandler(accountRepository, selectionRepository, new StubGitHubService());
+        var handler = new SyncGitHubRepositoryCommandHandler(
+            accountRepository,
+            selectionRepository,
+            new StubGitHubService(),
+            new StubGitHubCommitRepository(),
+            new StubGitHubPullRequestRepository(),
+            new StubGitHubPullRequestReviewRepository());
 
         await Assert.ThrowsAsync<InvalidOperationException>(async () =>
             await handler.Handle(new SyncGitHubRepositoryCommand(userId, 999), CancellationToken.None));
     }
 
     [Fact]
-    public async Task SyncGitHubRepositoryCommandHandler_CallsGitHubService_WhenRepositoryIsSelected()
+    public async Task SyncGitHubRepositoryCommandHandler_PersistsContributions_WhenRepositoryIsSelected()
     {
         var userId = Guid.NewGuid();
         string? syncedRepository = null;
@@ -176,15 +191,66 @@ public class GitHubIntegrationTests
             GetPullRequestsAsyncDelegate = (_, repositoryFullName) =>
             {
                 syncedRepository = repositoryFullName;
-                return Task.FromResult<IEnumerable<GitHubPullRequestDto>>(Array.Empty<GitHubPullRequestDto>());
+                return Task.FromResult<IEnumerable<GitHubPullRequestDto>>(new[]
+                {
+                    new GitHubPullRequestDto(
+                        500,
+                        42,
+                        "Improve dashboard",
+                        "open",
+                        "octocat",
+                        DateTime.UtcNow,
+                        null,
+                        null,
+                        "https://github.com/octocat/repo/pull/42")
+                });
+            },
+            GetPullRequestReviewsAsyncDelegate = (_, _, _) =>
+            {
+                return Task.FromResult<IEnumerable<GitHubPullRequestReviewDto>>(new[]
+                {
+                    new GitHubPullRequestReviewDto(
+                        900,
+                        "reviewer-a",
+                        "APPROVED",
+                        DateTime.UtcNow,
+                        "https://github.com/octocat/repo/pull/42#pullrequestreview-900")
+                });
+            },
+            GetCommitsAsyncDelegate = (_, _) =>
+            {
+                return Task.FromResult<IEnumerable<GitHubCommitDto>>(new[]
+                {
+                    new GitHubCommitDto(
+                        "abc123",
+                        "feat: add dashboard",
+                        "Octo Cat",
+                        "octo@example.com",
+                        DateTime.UtcNow,
+                        "https://github.com/octocat/repo/commit/abc123")
+                });
             }
         };
 
-        var handler = new SyncGitHubRepositoryCommandHandler(accountRepository, selectionRepository, service);
+        var commitRepository = new StubGitHubCommitRepository();
+        var pullRequestRepository = new StubGitHubPullRequestRepository();
+        var reviewRepository = new StubGitHubPullRequestReviewRepository();
+
+        var handler = new SyncGitHubRepositoryCommandHandler(
+            accountRepository,
+            selectionRepository,
+            service,
+            commitRepository,
+            pullRequestRepository,
+            reviewRepository);
 
         await handler.Handle(new SyncGitHubRepositoryCommand(userId, 100), CancellationToken.None);
 
         Assert.Equal("octocat/repo", syncedRepository);
+        Assert.Single(pullRequestRepository.AddedPullRequests);
+        Assert.True(pullRequestRepository.AddedPullRequests[0].IsApproved);
+        Assert.Single(reviewRepository.AddedReviews);
+        Assert.Single(commitRepository.AddedCommits);
     }
 
     [Fact]
@@ -386,12 +452,66 @@ public class GitHubIntegrationTests
         public Func<string, Task<GitHubCodeExchangeResultDto>> ExchangeCodeAsyncDelegate { get; set; } = _ => throw new InvalidOperationException();
         public Func<string, Task<IEnumerable<GitHubRepositoryDto>>> GetUserRepositoriesAsyncDelegate { get; set; } = _ => Task.FromResult<IEnumerable<GitHubRepositoryDto>>(Array.Empty<GitHubRepositoryDto>());
         public Func<string, string, Task<IEnumerable<GitHubPullRequestDto>>> GetPullRequestsAsyncDelegate { get; set; } = (_, _) => Task.FromResult<IEnumerable<GitHubPullRequestDto>>(Array.Empty<GitHubPullRequestDto>());
+        public Func<string, string, Task<IEnumerable<GitHubCommitDto>>> GetCommitsAsyncDelegate { get; set; } = (_, _) => Task.FromResult<IEnumerable<GitHubCommitDto>>(Array.Empty<GitHubCommitDto>());
+        public Func<string, string, int, Task<IEnumerable<GitHubPullRequestReviewDto>>> GetPullRequestReviewsAsyncDelegate { get; set; } = (_, _, _) => Task.FromResult<IEnumerable<GitHubPullRequestReviewDto>>(Array.Empty<GitHubPullRequestReviewDto>());
 
         public Task<string> GetAuthorizationUrlAsync() => Task.FromResult(string.Empty);
         public Task<GitHubCodeExchangeResultDto> ExchangeCodeAsync(string code) => ExchangeCodeAsyncDelegate(code);
         public Task<IEnumerable<GitHubRepositoryDto>> GetUserRepositoriesAsync(string encryptedAccessToken) => GetUserRepositoriesAsyncDelegate(encryptedAccessToken);
         public Task<IEnumerable<GitHubPullRequestDto>> GetPullRequestsAsync(string encryptedAccessToken, string repositoryFullName)
             => GetPullRequestsAsyncDelegate(encryptedAccessToken, repositoryFullName);
+        public Task<IEnumerable<GitHubCommitDto>> GetCommitsAsync(string encryptedAccessToken, string repositoryFullName)
+            => GetCommitsAsyncDelegate(encryptedAccessToken, repositoryFullName);
+        public Task<IEnumerable<GitHubPullRequestReviewDto>> GetPullRequestReviewsAsync(string encryptedAccessToken, string repositoryFullName, int pullRequestNumber)
+            => GetPullRequestReviewsAsyncDelegate(encryptedAccessToken, repositoryFullName, pullRequestNumber);
+    }
+
+    private sealed class StubGitHubCommitRepository : IGitHubCommitRepository
+    {
+        public List<GitHubCommit> AddedCommits { get; } = new();
+
+        public Task<GitHubCommit?> GetByUserRepositoryAndShaAsync(Guid userId, long repositoryId, string commitSha)
+            => Task.FromResult<GitHubCommit?>(null);
+
+        public Task AddAsync(GitHubCommit commit)
+        {
+            AddedCommits.Add(commit);
+            return Task.CompletedTask;
+        }
+
+        public Task UpdateAsync(GitHubCommit commit) => Task.CompletedTask;
+    }
+
+    private sealed class StubGitHubPullRequestRepository : IGitHubPullRequestRepository
+    {
+        public List<GitHubPullRequest> AddedPullRequests { get; } = new();
+
+        public Task<GitHubPullRequest?> GetByUserRepositoryAndGitHubPullRequestIdAsync(Guid userId, long repositoryId, long gitHubPullRequestId)
+            => Task.FromResult<GitHubPullRequest?>(null);
+
+        public Task AddAsync(GitHubPullRequest pullRequest)
+        {
+            AddedPullRequests.Add(pullRequest);
+            return Task.CompletedTask;
+        }
+
+        public Task UpdateAsync(GitHubPullRequest pullRequest) => Task.CompletedTask;
+    }
+
+    private sealed class StubGitHubPullRequestReviewRepository : IGitHubPullRequestReviewRepository
+    {
+        public List<GitHubPullRequestReview> AddedReviews { get; } = new();
+
+        public Task<GitHubPullRequestReview?> GetByGitHubReviewIdAsync(long gitHubReviewId)
+            => Task.FromResult<GitHubPullRequestReview?>(null);
+
+        public Task AddAsync(GitHubPullRequestReview review)
+        {
+            AddedReviews.Add(review);
+            return Task.CompletedTask;
+        }
+
+        public Task UpdateAsync(GitHubPullRequestReview review) => Task.CompletedTask;
     }
 
     private sealed class StubGitHubRepositorySelectionRepository : IGitHubRepositorySelectionRepository

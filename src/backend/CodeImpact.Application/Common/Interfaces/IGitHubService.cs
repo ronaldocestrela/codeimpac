@@ -10,5 +10,7 @@ namespace CodeImpact.Application.Common.Interfaces
         Task<GitHubCodeExchangeResultDto> ExchangeCodeAsync(string code);
         Task<IEnumerable<GitHubRepositoryDto>> GetUserRepositoriesAsync(string encryptedAccessToken);
         Task<IEnumerable<GitHubPullRequestDto>> GetPullRequestsAsync(string encryptedAccessToken, string repositoryFullName);
+        Task<IEnumerable<GitHubCommitDto>> GetCommitsAsync(string encryptedAccessToken, string repositoryFullName);
+        Task<IEnumerable<GitHubPullRequestReviewDto>> GetPullRequestReviewsAsync(string encryptedAccessToken, string repositoryFullName, int pullRequestNumber);
     }
 }
