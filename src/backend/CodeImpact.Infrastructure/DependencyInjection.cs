@@ -30,7 +30,9 @@ namespace CodeImpact.Infrastructure
 
             services.AddDataProtection();
             services.Configure<GitHubSettings>(configuration.GetSection(GitHubSettingsSectionName));
+            services.Configure<OpenAISettings>(configuration.GetSection(OpenAISettingsSectionName));
             services.AddHttpClient<IGitHubService, GitHubService>();
+            services.AddHttpClient<ILLMService, OpenAIService>();
             services.AddScoped<IGitHubTokenProtector, GitHubTokenProtector>();
             services.AddScoped<IGitHubAccountRepository, GitHubAccountRepository>();
             services.AddScoped<IGitHubRepositorySelectionRepository, GitHubRepositorySelectionRepository>();
@@ -69,5 +71,6 @@ namespace CodeImpact.Infrastructure
 
         public const string JwtSettingsSectionName = "JwtSettings";
         public const string GitHubSettingsSectionName = "GitHub";
+        public const string OpenAISettingsSectionName = "OpenAI";
     }
 }

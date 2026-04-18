@@ -46,6 +46,8 @@
 5. Generate summaries from commits and approved PRs
 6. Generate manager-oriented highlights with evidence references
 
+*Status: Implemented — LLM abstraction, OpenAI integration with retry/logging, deterministic PromptBuilder, AIOrchestrator, and API endpoint for summary generation with traceable evidence IDs are available.*
+
 # Phase 6 — Reports
 1. Create Report entity
 2. Define executive report schema (KPIs + narrative + evidence)

@@ -138,6 +138,26 @@ namespace CodeImpact.WebApi.Controllers
             }
         }
 
+        [HttpPost("contributions/summary")]
+        public async Task<IActionResult> GenerateContributionSummary([FromBody] GenerateContributionSummaryRequestDto request)
+        {
+            var userId = GetUserId();
+            if (userId == Guid.Empty)
+            {
+                return Unauthorized();
+            }
+
+            try
+            {
+                var summary = await _mediator.Send(new GenerateContributionSummaryQuery(userId, request.RepositoryId, request.From, request.To));
+                return Ok(summary);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
+        }
+
         [HttpGet("contributions/commits/{contributionId:guid}")]
         public async Task<IActionResult> GetCommitContributionDetail(Guid contributionId)
         {
