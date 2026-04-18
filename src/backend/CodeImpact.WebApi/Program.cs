@@ -2,6 +2,7 @@ using CodeImpact.WebApi.Extensions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,10 +20,12 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+await app.ApplyMigrationsAsync();
+
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.MapOpenApi();
+    app.MapScalarApiReference();
 }
 
 app.UseHttpsRedirection();
