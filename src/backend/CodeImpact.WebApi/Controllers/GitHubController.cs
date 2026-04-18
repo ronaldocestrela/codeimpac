@@ -7,6 +7,7 @@ using CodeImpact.Application.Common.Interfaces;
 using CodeImpact.Application.GitHub.Commands;
 using CodeImpact.Application.GitHub.Dto;
 using CodeImpact.Application.GitHub.Queries;
+using CodeImpact.Application.Reports;
 using CodeImpact.Application.Reports.Dto;
 using CodeImpact.Application.Reports.Queries;
 using MediatR;
@@ -283,6 +284,55 @@ namespace CodeImpact.WebApi.Controllers
             }
 
             return Ok(report);
+        }
+
+        [HttpGet("reports/{reportId:guid}/export")]
+        public async Task<IActionResult> ExportExecutiveReport(Guid reportId, [FromQuery] string format = "markdown")
+        {
+            var userId = GetUserId();
+            if (userId == Guid.Empty)
+            {
+                return Unauthorized();
+            }
+
+            if (!TryParseExportFormat(format, out var exportFormat))
+            {
+                return BadRequest(new { Message = "Formato de exportacao invalido. Utilize: markdown, pdf ou docx." });
+            }
+
+            var exportFile = await _mediator.Send(new ExportExecutiveReportQuery(userId, reportId, exportFormat));
+            if (exportFile is null)
+            {
+                return NotFound();
+            }
+
+            return File(exportFile.Content, exportFile.ContentType, exportFile.FileName);
+        }
+
+        private static bool TryParseExportFormat(string format, out ExecutiveReportExportFormat exportFormat)
+        {
+            exportFormat = ExecutiveReportExportFormat.Markdown;
+            if (string.IsNullOrWhiteSpace(format))
+            {
+                return true;
+            }
+
+            var normalized = format.Trim().ToLowerInvariant();
+            switch (normalized)
+            {
+                case "markdown":
+                case "md":
+                    exportFormat = ExecutiveReportExportFormat.Markdown;
+                    return true;
+                case "pdf":
+                    exportFormat = ExecutiveReportExportFormat.Pdf;
+                    return true;
+                case "docx":
+                    exportFormat = ExecutiveReportExportFormat.Docx;
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         private Guid GetUserId()

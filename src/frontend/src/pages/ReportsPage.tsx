@@ -1,16 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { enqueueExecutiveReportGeneration, getExecutiveReportDetail, getExecutiveReports } from '../services/reports'
+import { enqueueExecutiveReportGeneration, exportExecutiveReport, getExecutiveReportDetail, getExecutiveReports } from '../services/reports'
 import { getBackgroundJobStatus } from '../services/backgroundJobs'
 import { getGitHubRepositories, getSelectedGitHubRepositories } from '../services/github'
 import type { ExecutiveReportFilters, ExecutiveReportListItem } from '../types/reports'
 import type { GitHubRepository } from '../types/github'
 import type { BackgroundJobStatusResponse } from '../types/backgroundJobs'
 import {
-  buildExecutiveReportCsv,
-  buildExecutiveReportMarkdown,
-  downloadExport,
-  getReportExportFileName,
+  downloadBlobExport,
+  extractFileNameFromContentDisposition,
+  getReportExportFallbackFileName,
   type ReportExportFormat
 } from '../utils/reportExport'
 
@@ -87,8 +86,8 @@ export default function ReportsPage() {
     queryKey: ['report-generation-job', pendingJobId],
     queryFn: (): Promise<BackgroundJobStatusResponse> => getBackgroundJobStatus(pendingJobId ?? ''),
     enabled: Boolean(pendingJobId),
-    refetchInterval: query => {
-      const status = query.state.data?.status
+    refetchInterval: data => {
+      const status = data?.status
       return status === 'Queued' || status === 'Processing' ? 2000 : false
     }
   })
@@ -110,7 +109,7 @@ export default function ReportsPage() {
       setPendingJobId(null)
       setJobFeedback(jobStatusQuery.data.errorMessage || 'Falha ao processar o relatorio em background.')
     }
-  }, [pendingJobId, jobStatusQuery.data, reportsQuery])
+  }, [pendingJobId, jobStatusQuery.data, reportsQuery.refetch])
 
   const createMutation = useMutation({
     mutationFn: () => enqueueExecutiveReportGeneration(filters),
@@ -123,31 +122,28 @@ export default function ReportsPage() {
   const reports = reportsQuery.data ?? []
   const repositories = repositoriesQuery.data ?? []
 
-  const handleExport = () => {
+  const handleExport = async () => {
     if (!detailQuery.data) {
       return
     }
 
     const report = detailQuery.data
-    const fileName = getReportExportFileName(report, exportFormat)
+    try {
+      const exportResponse = await exportExecutiveReport(report.id, exportFormat)
+      const serverFileName = extractFileNameFromContentDisposition(exportResponse.contentDisposition)
+      const fallbackFileName = getReportExportFallbackFileName(report.generatedAt, exportFormat)
+      downloadBlobExport(exportResponse.blob, serverFileName ?? fallbackFileName)
 
-    if (exportFormat === 'markdown') {
-      const markdown = buildExecutiveReportMarkdown(report)
-      downloadExport(markdown, fileName, 'text/markdown;charset=utf-8')
-      setExportFeedback('Relatório exportado em Markdown.')
-      return
+      if (exportFormat === 'markdown') {
+        setExportFeedback('Relatorio exportado em Markdown.')
+      } else if (exportFormat === 'pdf') {
+        setExportFeedback('Relatorio exportado em PDF.')
+      } else {
+        setExportFeedback('Relatorio exportado em DOCX.')
+      }
+    } catch {
+      setExportFeedback('Falha ao exportar relatorio.')
     }
-
-    if (exportFormat === 'csv') {
-      const csv = buildExecutiveReportCsv(report)
-      downloadExport(csv, fileName, 'text/csv;charset=utf-8')
-      setExportFeedback('Relatório exportado em CSV.')
-      return
-    }
-
-    const json = JSON.stringify(report, null, 2)
-    downloadExport(json, fileName, 'application/json;charset=utf-8')
-    setExportFeedback('Relatório exportado em JSON.')
   }
 
   return (
@@ -250,8 +246,8 @@ export default function ReportsPage() {
               disabled={!detailQuery.data}
             >
               <option value="markdown">Markdown (.md)</option>
-              <option value="csv">CSV (.csv)</option>
-              <option value="json">JSON (.json)</option>
+              <option value="pdf">PDF (.pdf)</option>
+              <option value="docx">DOCX (.docx)</option>
             </select>
 
             <button
@@ -263,7 +259,7 @@ export default function ReportsPage() {
               Exportar
             </button>
 
-            {exportFeedback && <p className="text-sm text-green-700">{exportFeedback}</p>}
+            {exportFeedback && <p className={`text-sm ${exportFeedback.toLowerCase().includes('falha') ? 'text-red-600' : 'text-green-700'}`}>{exportFeedback}</p>}
           </div>
 
           {!selectedReportId && <p className="text-sm text-slate-600">Selecione um relatório no histórico para visualizar os detalhes.</p>}

@@ -64,7 +64,7 @@
 4. Repository and period filters for report scope
 5. Export UI
 
-*Status: Implemented — dashboard com KPIs e ações rápidas, página de contribuições com filtros por repositório/período e métricas, página de relatórios com histórico/detalhe, filtros de escopo por repositório e período, e UI de exportação (Markdown, CSV e JSON).*
+*Status: Implemented — dashboard com KPIs e acoes rapidas, pagina de contribuicoes com filtros por repositorio/periodo e metricas, pagina de relatorios com historico/detalhe, filtros de escopo por repositorio e periodo, e UI de exportacao com formatos de relatorio para lideranca.*
 
 # Phase 8 — Background Jobs
 1. Setup Hangfire
@@ -77,6 +77,8 @@
 1. Markdown export
 2. PDF export
 3. DOCX export
+
+*Status: Implemented — endpoint de exportacao dedicado para relatorios executivos (`markdown`, `pdf`, `docx`), com geracao de arquivo real no backend (QuestPDF e OpenXML), download integrado no frontend via API autenticada e cobertura de testes para assinaturas/estrutura dos arquivos exportados.*
 
 # Phase 10 — Production
 1. Docker setup

@@ -1,4 +1,5 @@
 using CodeImpact.Application.Common.Interfaces;
+using CodeImpact.Application.Reports;
 using CodeImpact.Domain.Repositories;
 using CodeImpact.Infrastructure.Identity;
 using CodeImpact.Infrastructure.Persistence;
@@ -42,6 +43,7 @@ namespace CodeImpact.Infrastructure
             services.AddScoped<IReportRepository, ReportRepository>();
             services.AddScoped<IBackgroundJobExecutionRepository, BackgroundJobExecutionRepository>();
             services.AddScoped<IBackgroundJobScheduler, HangfireBackgroundJobScheduler>();
+            services.AddScoped<IExecutiveReportExportService, ExecutiveReportExportService>();
 
             var jwtSettings = configuration.GetSection(JwtSettingsSectionName).Get<JwtSettings>();
             var key = Encoding.UTF8.GetBytes(jwtSettings?.Secret ?? string.Empty);
