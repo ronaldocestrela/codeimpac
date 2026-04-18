@@ -55,6 +55,24 @@ namespace CodeImpact.WebApi.Controllers
             }
         }
 
+        [HttpGet("account")]
+        public async Task<IActionResult> GetLinkedAccount()
+        {
+            var userId = GetUserId();
+            if (userId == Guid.Empty)
+            {
+                return Unauthorized();
+            }
+
+            var account = await _mediator.Send(new GetGitHubAccountQuery(userId));
+            if (account is null)
+            {
+                return NoContent();
+            }
+
+            return Ok(account);
+        }
+
         [HttpGet("repositories")]
         public async Task<IActionResult> GetRepositories()
         {
