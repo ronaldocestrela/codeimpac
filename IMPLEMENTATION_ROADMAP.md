@@ -16,6 +16,8 @@
 4. Setup React Query
 5. Setup auth flow
 
+*Status: Phase 2 implemented — login/register, auth state, refresh handling, and protected routes are available.*
+
 # Phase 3 — GitHub Integration
 1. Implement GitHub OAuth
 2. Fetch repositories

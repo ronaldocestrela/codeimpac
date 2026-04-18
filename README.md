@@ -17,6 +17,11 @@ CodeImpact is a SaaS platform for GitHub contribution analysis and AI-generated 
 - `src/frontend/` — Vite React frontend scaffold
 - `CodeImpact.Tests/` — backend unit test project
 
+## Current Status
+- Phase 1: Foundation is implemented for backend authentication and persistence.
+- Phase 2: Frontend auth setup is implemented, including login/register pages, token storage, and protected routing.
+- Phase 3 and later phases remain pending for GitHub integration, contributions, AI generation, and reporting.
+
 ## What is implemented
 ### Backend
 - JWT-based authentication
@@ -33,9 +38,13 @@ CodeImpact is a SaaS platform for GitHub contribution analysis and AI-generated 
 ### Frontend
 - Vite + React + TypeScript scaffold
 - TailwindCSS setup with `tailwind.config.cjs` and `postcss.config.cjs`
-- React Router basic routes for `/` and `/login`
+- React Router routes for `/`, `/login`, `/register`, and `/dashboard`
 - React Query provider configured in `main.tsx`
 - Central Axios instance in `src/frontend/src/services/api.ts`
+- Axios auth interceptor with refresh token retry handling
+- Zustand auth store with token persistence
+- Login and register pages with backend integration
+- Protected route guard for dashboard access
 - Frontend unit tests using Vitest
 
 ### Testing
@@ -44,11 +53,10 @@ CodeImpact is a SaaS platform for GitHub contribution analysis and AI-generated 
 
 ## What still needs to be implemented
 ### Frontend
-- `services/api.ts` Axios interceptors for auth header injection and 401 handling
-- Auth state management (Zustand or Context API)
-- Login/Register form UI and auth pages
-- Protected route guards
-- Full auth flow integration with backend refresh handling
+- Complete user profile management and dashboard features
+- Data fetching for GitHub contributions and reports
+- UI for repository selection and contribution details
+- More comprehensive frontend integration tests and e2e coverage
 
 ### Backend / Future Phases
 - GitHub OAuth integration
