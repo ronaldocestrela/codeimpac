@@ -35,66 +35,91 @@ export default function ContributionDetailPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-slate-900">Detalhe da Contribuição</h1>
-        <Link to="/contributions" className="text-indigo-600 hover:underline">Voltar</Link>
+        <div>
+          <p className="text-xs font-semibold tracking-widest uppercase text-on-surface-variant">Detalhe</p>
+          <h1 className="mt-1 text-3xl font-semibold text-on-surface">Contribuição</h1>
+        </div>
+        <Link to="/contributions" className="btn-ghost text-xs">← Voltar</Link>
       </div>
 
-      {loading && <p className="text-sm text-slate-600">Carregando detalhes...</p>}
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {loading && <p className="text-sm text-on-surface-variant">Carregando detalhes...</p>}
+      {error && <p className="text-sm text-error">{error}</p>}
 
       {!loading && !error && contribution && (
         <>
-          <section className="rounded-lg border bg-white p-4 shadow-sm">
-            <h2 className="text-lg font-semibold text-slate-900">{contribution.title}</h2>
-            <div className="mt-3 grid gap-2 text-sm text-slate-700 md:grid-cols-2">
-              <p><strong>Tipo:</strong> {contribution.type === 'pull_request' ? 'Pull Request' : 'Commit'}</p>
-              <p><strong>Status:</strong> {contribution.status}</p>
-              <p><strong>Autor:</strong> {contribution.author}</p>
-              <p><strong>Repositório:</strong> {contribution.repositoryFullName}</p>
-              <p><strong>Referência:</strong> {contribution.externalReference}</p>
-              <p><strong>Data:</strong> {new Date(contribution.occurredAt).toLocaleString()}</p>
+          <div className="card">
+            <h2 className="text-lg font-semibold text-on-surface">{contribution.title}</h2>
+            <div className="mt-4 grid gap-3 text-sm md:grid-cols-2">
+              <div className="metric-card">
+                <p className="text-xs text-on-surface-variant">Tipo</p>
+                <p className="mt-1 text-on-surface font-medium">
+                  {contribution.type === 'pull_request' ? 'Pull Request' : 'Commit'}
+                </p>
+              </div>
+              <div className="metric-card">
+                <p className="text-xs text-on-surface-variant">Status</p>
+                <p className="mt-1">
+                  <span className={contribution.isApproved ? 'chip-approved' : 'chip-neutral'}>{contribution.status}</span>
+                </p>
+              </div>
+              <div className="metric-card">
+                <p className="text-xs text-on-surface-variant">Autor</p>
+                <p className="mt-1 text-on-surface font-medium">{contribution.author}</p>
+              </div>
+              <div className="metric-card">
+                <p className="text-xs text-on-surface-variant">Repositório</p>
+                <p className="mt-1 text-on-surface font-mono text-xs">{contribution.repositoryFullName}</p>
+              </div>
+              <div className="metric-card">
+                <p className="text-xs text-on-surface-variant">Referência</p>
+                <p className="mt-1 text-on-surface font-mono text-xs">{contribution.externalReference}</p>
+              </div>
+              <div className="metric-card">
+                <p className="text-xs text-on-surface-variant">Data</p>
+                <p className="mt-1 text-on-surface text-xs">{new Date(contribution.occurredAt).toLocaleString()}</p>
+              </div>
             </div>
             <a
-              className="mt-4 inline-block text-indigo-600 hover:underline"
+              className="mt-4 inline-flex items-center gap-1 text-sm text-primary hover:underline"
               href={contribution.url}
               target="_blank"
               rel="noreferrer"
             >
-              Abrir evidência no GitHub
+              Abrir evidência no GitHub ↗
             </a>
-          </section>
+          </div>
 
-          <section className="rounded-lg border bg-white p-4 shadow-sm">
-            <h3 className="text-base font-semibold text-slate-900">Evidências</h3>
-            <div className="mt-3 overflow-x-auto">
+          <div className="card">
+            <p className="text-xs font-semibold tracking-widest uppercase text-on-surface-variant">Evidências rastreáveis</p>
+            <div className="mt-4 overflow-x-auto">
               <table className="min-w-full text-left text-sm">
                 <thead>
-                  <tr className="border-b text-slate-500">
-                    <th className="px-3 py-2">Tipo</th>
-                    <th className="px-3 py-2">Referência</th>
-                    <th className="px-3 py-2">Ator</th>
-                    <th className="px-3 py-2">Estado</th>
-                    <th className="px-3 py-2">Data</th>
-                    <th className="px-3 py-2">Link</th>
+                  <tr className="text-xs text-on-surface-variant">
+                    <th className="px-3 py-2 font-medium">Tipo</th>
+                    <th className="px-3 py-2 font-medium">Referência</th>
+                    <th className="px-3 py-2 font-medium">Ator</th>
+                    <th className="px-3 py-2 font-medium">Estado</th>
+                    <th className="px-3 py-2 font-medium">Data</th>
+                    <th className="px-3 py-2 font-medium">Link</th>
                   </tr>
                 </thead>
                 <tbody>
                   {contribution.evidence.map(item => (
-                    <tr key={`${item.evidenceType}-${item.externalReference}-${item.url}`} className="border-b last:border-0">
-                      <td className="px-3 py-2">{item.evidenceType}</td>
-                      <td className="px-3 py-2">{item.externalReference}</td>
-                      <td className="px-3 py-2">{item.actor}</td>
-                      <td className="px-3 py-2">{item.state}</td>
-                      <td className="px-3 py-2">{new Date(item.occurredAt).toLocaleString()}</td>
+                    <tr key={`${item.evidenceType}-${item.externalReference}-${item.url}`} className="border-t border-outline-variant/20 hover:bg-surface-container-highest/30 transition-colors">
+                      <td className="px-3 py-2"><span className="chip-neutral">{item.evidenceType}</span></td>
+                      <td className="px-3 py-2 font-mono text-xs text-on-surface-variant">{item.externalReference}</td>
+                      <td className="px-3 py-2 text-on-surface-variant">{item.actor}</td>
+                      <td className="px-3 py-2"><span className={item.state === 'APPROVED' ? 'chip-approved' : 'chip-neutral'}>{item.state}</span></td>
+                      <td className="px-3 py-2 text-xs text-on-surface-variant">{new Date(item.occurredAt).toLocaleString()}</td>
                       <td className="px-3 py-2">
-                        <a href={item.url} target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline">Abrir</a>
+                        <a href={item.url} target="_blank" rel="noreferrer" className="text-primary hover:underline text-xs">Abrir ↗</a>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-          </section>
+          </div>
         </>
       )}
     </div>

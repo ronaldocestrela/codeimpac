@@ -34,11 +34,17 @@ function ListItemButton({
     <button
       type="button"
       onClick={() => onSelect(item.id)}
-      className={`w-full rounded-lg border px-4 py-3 text-left transition ${selected ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200 bg-white hover:bg-slate-50'}`}
+      className={`w-full rounded-md px-4 py-3 text-left transition ${
+        selected
+          ? 'bg-primary/10 border border-primary/30'
+          : 'bg-surface-container hover:bg-surface-container-highest border border-transparent'
+      }`}
     >
-      <p className="text-sm font-semibold text-slate-800">{new Date(item.generatedAt).toLocaleString()}</p>
-      <p className="mt-1 text-xs text-slate-500">Commits: {item.commitCount} | PRs aprovados: {item.pullRequestApprovedCount} | Repositórios: {item.repositoryCount}</p>
-      <p className="mt-2 text-sm text-slate-700">{item.executiveSummaryPreview || 'Sem resumo disponível.'}</p>
+      <p className="text-xs font-semibold text-on-surface">{new Date(item.generatedAt).toLocaleString()}</p>
+      <p className="mt-1 text-xs text-on-surface-variant">
+        Commits: {item.commitCount} &middot; PRs aprovados: {item.pullRequestApprovedCount} &middot; Repos: {item.repositoryCount}
+      </p>
+      <p className="mt-2 text-xs text-on-surface-variant line-clamp-2">{item.executiveSummaryPreview || 'Sem resumo disponível.'}</p>
     </button>
   )
 }
@@ -148,15 +154,19 @@ export default function ReportsPage() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-lg border bg-white p-4 shadow-sm">
-        <h1 className="text-2xl font-semibold text-slate-900">Relatórios Executivos</h1>
-        <p className="mt-1 text-sm text-slate-600">Gere e consulte relatórios orientados à liderança com métricas e evidências rastreáveis.</p>
+      {/* Header + filters + generate */}
+      <div className="card">
+        <div>
+          <p className="text-xs font-semibold tracking-widest uppercase text-on-surface-variant">Liderança</p>
+          <h1 className="mt-1 text-3xl font-semibold text-on-surface">Relatórios Executivos</h1>
+          <p className="mt-1 text-sm text-on-surface-variant">Gere e consulte relatórios orientados à liderança com métricas e evidências rastreáveis.</p>
+        </div>
 
-        <div className="mt-4 grid gap-3 md:grid-cols-3">
-          <label className="text-sm text-slate-700">
+        <div className="mt-5 grid gap-3 md:grid-cols-3">
+          <label className="text-xs text-on-surface-variant">
             Repositório
             <select
-              className="mt-1 w-full rounded border border-slate-300 px-3 py-2"
+              className="mt-1.5 w-full px-3 py-2"
               value={repositoryId}
               onChange={event => setRepositoryId(event.target.value)}
               disabled={repositoriesQuery.isLoading || repositories.length === 0}
@@ -169,27 +179,27 @@ export default function ReportsPage() {
               ))}
             </select>
             {repositoriesQuery.isLoading && (
-              <p className="mt-1 text-xs text-slate-500">Carregando repositórios...</p>
+              <p className="mt-1 text-xs text-on-surface-variant">Carregando repositórios...</p>
             )}
             {repositoriesQuery.isError && (
-              <p className="mt-1 text-xs text-red-600">Não foi possível carregar os repositórios para o filtro.</p>
+              <p className="mt-1 text-xs text-error">Não foi possível carregar os repositórios.</p>
             )}
           </label>
 
-          <label className="text-sm text-slate-700">
+          <label className="text-xs text-on-surface-variant">
             De
             <input
-              className="mt-1 w-full rounded border border-slate-300 px-3 py-2"
+              className="mt-1.5 w-full px-3 py-2"
               type="date"
               value={from}
               onChange={event => setFrom(event.target.value)}
             />
           </label>
 
-          <label className="text-sm text-slate-700">
+          <label className="text-xs text-on-surface-variant">
             Até
             <input
-              className="mt-1 w-full rounded border border-slate-300 px-3 py-2"
+              className="mt-1.5 w-full px-3 py-2"
               type="date"
               value={to}
               onChange={event => setTo(event.target.value)}
@@ -197,50 +207,60 @@ export default function ReportsPage() {
           </label>
         </div>
 
-        <button
-          type="button"
-          onClick={() => createMutation.mutate()}
-          disabled={createMutation.isPending || Boolean(pendingJobId)}
-          className="mt-4 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {createMutation.isPending || pendingJobId ? 'Processando em background...' : 'Gerar Relatório'}
-        </button>
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => createMutation.mutate()}
+            disabled={createMutation.isPending || Boolean(pendingJobId)}
+            className="btn-primary"
+          >
+            {createMutation.isPending || pendingJobId ? 'Processando...' : 'Gerar Relatório'}
+          </button>
 
-        {createMutation.isError && (
-          <p className="mt-3 text-sm text-red-600">Não foi possível gerar o relatório com os filtros informados.</p>
-        )}
-        {jobFeedback && (
-          <p className={`mt-3 text-sm ${jobFeedback.toLowerCase().includes('falha') ? 'text-red-600' : 'text-slate-700'}`}>{jobFeedback}</p>
-        )}
-        {pendingJobId && jobStatusQuery.data?.status === 'Processing' && (
-          <p className="mt-2 text-xs text-slate-500">Job em execucao. O historico sera atualizado automaticamente ao concluir.</p>
-        )}
-      </section>
+          {createMutation.isError && (
+            <p className="text-xs text-error">Não foi possível gerar o relatório.</p>
+          )}
+          {jobFeedback && (
+            <p className={`text-xs ${
+              jobFeedback.toLowerCase().includes('falha') ? 'text-error' : 'text-on-surface-variant'
+            }`}>{jobFeedback}</p>
+          )}
+          {pendingJobId && jobStatusQuery.data?.status === 'Processing' && (
+            <p className="text-xs text-on-surface-variant">Job em execução. Atualizando automaticamente...</p>
+          )}
+        </div>
+      </div>
 
-      <div className="grid gap-6 lg:grid-cols-[340px_1fr]">
-        <section className="space-y-3 rounded-lg border bg-white p-4 shadow-sm">
-          <h2 className="text-base font-semibold text-slate-900">Histórico</h2>
+      {/* Two-column layout: history + detail */}
+      <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
+        {/* History list */}
+        <div className="card space-y-2">
+          <p className="text-xs font-semibold tracking-widest uppercase text-on-surface-variant">Histórico</p>
 
-          {reportsQuery.isLoading && <p className="text-sm text-slate-600">Carregando relatórios...</p>}
-          {reportsQuery.isError && <p className="text-sm text-red-600">Falha ao carregar histórico de relatórios.</p>}
+          {reportsQuery.isLoading && <p className="text-sm text-on-surface-variant">Carregando relatórios...</p>}
+          {reportsQuery.isError && <p className="text-sm text-error">Falha ao carregar histórico.</p>}
           {!reportsQuery.isLoading && !reportsQuery.isError && reports.length === 0 && (
-            <p className="text-sm text-slate-600">Nenhum relatório encontrado para os filtros informados.</p>
+            <p className="text-sm text-on-surface-variant">Nenhum relatório encontrado.</p>
           )}
 
-          {!reportsQuery.isLoading && !reportsQuery.isError && reports.map(item => (
-            <ListItemButton
-              key={item.id}
-              item={item}
-              selected={item.id === selectedReportId}
-              onSelect={setSelectedReportId}
-            />
-          ))}
-        </section>
+          <div className="mt-2 space-y-2">
+            {!reportsQuery.isLoading && !reportsQuery.isError && reports.map(item => (
+              <ListItemButton
+                key={item.id}
+                item={item}
+                selected={item.id === selectedReportId}
+                onSelect={setSelectedReportId}
+              />
+            ))}
+          </div>
+        </div>
 
-        <section className="rounded-lg border bg-white p-4 shadow-sm">
-          <div className="mb-4 flex flex-wrap items-center gap-2 border-b border-slate-200 pb-4">
+        {/* Report detail */}
+        <div className="card">
+          {/* Export toolbar */}
+          <div className="mb-5 flex flex-wrap items-center gap-2 pb-4 border-b border-outline-variant/20">
             <select
-              className="rounded border border-slate-300 px-3 py-2 text-sm"
+              className="px-3 py-2 text-xs"
               value={exportFormat}
               onChange={event => setExportFormat(event.target.value as ReportExportFormat)}
               disabled={!detailQuery.data}
@@ -254,70 +274,108 @@ export default function ReportsPage() {
               type="button"
               onClick={handleExport}
               disabled={!detailQuery.data}
-              className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="btn-secondary text-xs"
             >
               Exportar
             </button>
 
-            {exportFeedback && <p className={`text-sm ${exportFeedback.toLowerCase().includes('falha') ? 'text-red-600' : 'text-green-700'}`}>{exportFeedback}</p>}
+            {exportFeedback && (
+              <p className={`text-xs ${
+                exportFeedback.toLowerCase().includes('falha') ? 'text-error' : 'text-on-surface-variant'
+              }`}>{exportFeedback}</p>
+            )}
           </div>
 
-          {!selectedReportId && <p className="text-sm text-slate-600">Selecione um relatório no histórico para visualizar os detalhes.</p>}
-          {selectedReportId && detailQuery.isLoading && <p className="text-sm text-slate-600">Carregando detalhes do relatório...</p>}
-          {selectedReportId && detailQuery.isError && <p className="text-sm text-red-600">Falha ao carregar detalhes do relatório.</p>}
+          {!selectedReportId && (
+            <p className="text-sm text-on-surface-variant">Selecione um relatório no histórico para visualizar os detalhes.</p>
+          )}
+          {selectedReportId && detailQuery.isLoading && (
+            <p className="text-sm text-on-surface-variant">Carregando detalhes...</p>
+          )}
+          {selectedReportId && detailQuery.isError && (
+            <p className="text-sm text-error">Falha ao carregar detalhes do relatório.</p>
+          )}
 
           {detailQuery.data && (
-            <div className="space-y-5">
+            <div className="space-y-6">
               <div>
-                <h2 className="text-xl font-semibold text-slate-900">Relatório Executivo</h2>
-                <p className="mt-1 text-sm text-slate-500">Gerado em {formatDate(detailQuery.data.generatedAt)}</p>
+                <p className="text-xs font-semibold tracking-widest uppercase text-on-surface-variant">Relatório Executivo</p>
+                <p className="mt-1 text-xs text-on-surface-variant">Gerado em {formatDate(detailQuery.data.generatedAt)}</p>
               </div>
 
-              <div className="grid gap-3 text-sm md:grid-cols-2 xl:grid-cols-3">
-                <div className="rounded border border-slate-200 bg-slate-50 p-3"><strong>Commits:</strong> {detailQuery.data.metrics.commitCount}</div>
-                <div className="rounded border border-slate-200 bg-slate-50 p-3"><strong>PRs abertos:</strong> {detailQuery.data.metrics.pullRequestOpenCount}</div>
-                <div className="rounded border border-slate-200 bg-slate-50 p-3"><strong>PRs fechados:</strong> {detailQuery.data.metrics.pullRequestClosedCount}</div>
-                <div className="rounded border border-slate-200 bg-slate-50 p-3"><strong>PRs mergeados:</strong> {detailQuery.data.metrics.pullRequestMergedCount}</div>
-                <div className="rounded border border-slate-200 bg-slate-50 p-3"><strong>PRs aprovados:</strong> {detailQuery.data.metrics.pullRequestApprovedCount}</div>
-                <div className="rounded border border-slate-200 bg-slate-50 p-3"><strong>Lead time médio:</strong> {detailQuery.data.metrics.averageMergeLeadTimeHours ?? '-'} h</div>
+              {/* Metrics */}
+              <div className="grid gap-3 md:grid-cols-3">
+                <div className="metric-card">
+                  <p className="text-xs text-on-surface-variant">Commits</p>
+                  <p className="mt-1 text-xl font-semibold text-on-surface">{detailQuery.data.metrics.commitCount}</p>
+                </div>
+                <div className="metric-card">
+                  <p className="text-xs text-on-surface-variant">PRs abertos</p>
+                  <p className="mt-1 text-xl font-semibold text-on-surface">{detailQuery.data.metrics.pullRequestOpenCount}</p>
+                </div>
+                <div className="metric-card">
+                  <p className="text-xs text-on-surface-variant">PRs fechados</p>
+                  <p className="mt-1 text-xl font-semibold text-on-surface">{detailQuery.data.metrics.pullRequestClosedCount}</p>
+                </div>
+                <div className="metric-card">
+                  <p className="text-xs text-on-surface-variant">PRs mergeados</p>
+                  <p className="mt-1 text-xl font-semibold text-on-surface">{detailQuery.data.metrics.pullRequestMergedCount}</p>
+                </div>
+                <div className="metric-card">
+                  <p className="text-xs text-on-surface-variant">PRs aprovados</p>
+                  <p className="mt-1 text-xl font-semibold text-primary">{detailQuery.data.metrics.pullRequestApprovedCount}</p>
+                </div>
+                <div className="metric-card">
+                  <p className="text-xs text-on-surface-variant">Lead time médio</p>
+                  <p className="mt-1 text-xl font-semibold text-on-surface">{detailQuery.data.metrics.averageMergeLeadTimeHours ?? '-'} h</p>
+                </div>
               </div>
 
+              {/* Executive summary */}
               <div>
-                <h3 className="text-base font-semibold text-slate-900">Resumo Executivo</h3>
-                <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">{detailQuery.data.executiveSummary || 'Sem resumo gerado.'}</p>
+                <p className="text-xs font-semibold tracking-widest uppercase text-on-surface-variant">Resumo Executivo</p>
+                <p className="mt-3 whitespace-pre-wrap text-sm text-on-surface leading-relaxed">
+                  {detailQuery.data.executiveSummary || 'Sem resumo gerado.'}
+                </p>
               </div>
 
+              {/* Highlights */}
               <div>
-                <h3 className="text-base font-semibold text-slate-900">Highlights</h3>
-                {detailQuery.data.highlights.length === 0 && <p className="mt-2 text-sm text-slate-600">Nenhum highlight retornado.</p>}
-                <div className="mt-2 space-y-3">
+                <p className="text-xs font-semibold tracking-widest uppercase text-on-surface-variant">Highlights</p>
+                {detailQuery.data.highlights.length === 0 && (
+                  <p className="mt-2 text-sm text-on-surface-variant">Nenhum highlight retornado.</p>
+                )}
+                <div className="mt-3 space-y-3">
                   {detailQuery.data.highlights.map(item => (
-                    <article key={`${item.title}-${item.impact}`} className="rounded border border-slate-200 p-3">
-                      <p className="font-medium text-slate-900">{item.title}</p>
-                      <p className="mt-1 text-sm text-slate-700">{item.insight}</p>
-                      <p className="mt-1 text-sm text-slate-600"><strong>Impacto:</strong> {item.impact}</p>
-                      <p className="mt-1 text-xs text-slate-500">Evidências: {item.evidenceIds.join(', ') || 'n/a'}</p>
+                    <article key={`${item.title}-${item.impact}`} className="metric-card">
+                      <p className="font-semibold text-on-surface text-sm">{item.title}</p>
+                      <p className="mt-1 text-sm text-on-surface-variant">{item.insight}</p>
+                      <p className="mt-1 text-xs text-on-surface-variant"><strong className="text-on-surface">Impacto:</strong> {item.impact}</p>
+                      <p className="mt-1 text-xs text-on-surface-variant/60">Evidências: {item.evidenceIds.join(', ') || 'n/a'}</p>
                     </article>
                   ))}
                 </div>
               </div>
 
+              {/* Risks */}
               <div>
-                <h3 className="text-base font-semibold text-slate-900">Riscos e Próximos Passos</h3>
-                {detailQuery.data.risks.length === 0 && <p className="mt-2 text-sm text-slate-600">Nenhum risco sinalizado.</p>}
-                <div className="mt-2 space-y-3">
+                <p className="text-xs font-semibold tracking-widest uppercase text-on-surface-variant">Riscos e Próximos Passos</p>
+                {detailQuery.data.risks.length === 0 && (
+                  <p className="mt-2 text-sm text-on-surface-variant">Nenhum risco sinalizado.</p>
+                )}
+                <div className="mt-3 space-y-3">
                   {detailQuery.data.risks.map(item => (
-                    <article key={`${item.risk}-${item.recommendation}`} className="rounded border border-amber-200 bg-amber-50 p-3">
-                      <p className="text-sm font-medium text-amber-900">{item.risk}</p>
-                      <p className="mt-1 text-sm text-amber-800"><strong>Recomendação:</strong> {item.recommendation}</p>
-                      <p className="mt-1 text-xs text-amber-700">Evidências: {item.evidenceIds.join(', ') || 'n/a'}</p>
+                    <article key={`${item.risk}-${item.recommendation}`} className="bg-tertiary/5 border border-tertiary/20 rounded-md p-3">
+                      <p className="text-sm font-semibold text-tertiary">{item.risk}</p>
+                      <p className="mt-1 text-sm text-on-surface-variant"><strong className="text-on-surface">Recomendação:</strong> {item.recommendation}</p>
+                      <p className="mt-1 text-xs text-on-surface-variant/60">Evidências: {item.evidenceIds.join(', ') || 'n/a'}</p>
                     </article>
                   ))}
                 </div>
               </div>
             </div>
           )}
-        </section>
+        </div>
       </div>
     </div>
   )

@@ -31,13 +31,23 @@ export default function GitHubOAuthCallbackPage() {
   }, [searchParams, setGitHubAccount, navigate])
 
   if (loading) {
-    return <div className="p-6">Finalizando o vinculo com GitHub...</div>
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <p className="text-sm text-on-surface-variant">Finalizando a vinculação com GitHub...</p>
+      </div>
+    )
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-6 bg-white rounded shadow mt-8">
-      <h1 className="text-2xl font-bold">Retorno do GitHub</h1>
-      {error ? <p className="mt-4 text-red-600">{error}</p> : <p className="mt-4">Seu GitHub foi vinculado com sucesso.</p>}
+    <div className="flex min-h-[50vh] items-center justify-center">
+      <div className="card w-full max-w-md text-center">
+        <p className="text-xs font-semibold tracking-widest uppercase text-on-surface-variant">GitHub OAuth</p>
+        <h1 className="mt-2 text-2xl font-semibold text-on-surface">Retorno do GitHub</h1>
+        {error
+          ? <p className="mt-4 text-sm text-error bg-error/10 px-3 py-2 rounded-md">{error}</p>
+          : <p className="mt-4 text-sm text-success">Sua conta GitHub foi vinculada com sucesso.</p>
+        }
+      </div>
     </div>
   )
 }

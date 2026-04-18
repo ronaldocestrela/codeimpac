@@ -14,12 +14,17 @@ import { getMe, refreshToken as refreshSession } from './services/auth'
 
 function Home() {
   return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold">CodeImpact Frontend</h1>
-      <p className="mt-2">Bem-vindo ao frontend do CodeImpact.</p>
-      <div className="mt-4 space-x-4">
-        <Link to="/login" className="text-indigo-600">Login</Link>
-        <Link to="/register" className="text-indigo-600">Cadastrar</Link>
+    <div className="flex min-h-[60vh] flex-col items-center justify-center text-center px-4">
+      <p className="text-xs font-semibold tracking-widest uppercase text-on-surface-variant mb-4">Developer Intelligence Platform</p>
+      <h1 className="text-5xl font-semibold text-on-surface leading-tight">
+        Code<span className="text-primary">Impact</span>
+      </h1>
+      <p className="mt-4 max-w-md text-sm text-on-surface-variant leading-relaxed">
+        Analise contribuições, classifique pull requests aprovados e gere relatórios executivos rastreáveis para liderança.
+      </p>
+      <div className="mt-8 flex gap-3">
+        <Link to="/login" className="btn-primary">Entrar</Link>
+        <Link to="/register" className="btn-secondary">Criar conta</Link>
       </div>
     </div>
   )
@@ -49,26 +54,37 @@ export default function App() {
   }, [accessToken, refreshToken, setAuthTokens, setUser, logout])
 
   if (initializing) {
-    return <div className="p-4">Carregando sessão...</div>
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-surface">
+        <p className="text-sm text-on-surface-variant">Carregando sessão...</p>
+      </div>
+    )
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="border-b bg-white px-6 py-4 shadow-sm">
+    <div className="min-h-screen bg-surface">
+      <header className="bg-surface-container-low px-6 py-4">
         <div className="mx-auto flex max-w-6xl items-center justify-between">
-          <div>
-            <Link to="/" className="text-xl font-bold text-slate-900">CodeImpact</Link>
-          </div>
-          <nav className="space-x-4 text-slate-700">
-            <Link to="/login">Login</Link>
-            <Link to="/register">Cadastro</Link>
-            <Link to="/dashboard">Dashboard</Link>
-            <Link to="/contributions">Contribuições</Link>
-            <Link to="/reports">Relatórios</Link>
+          <Link to="/" className="text-lg font-semibold tracking-tight text-on-surface">
+            Code<span className="text-primary">Impact</span>
+          </Link>
+          <nav className="flex items-center gap-6 text-sm">
+            {accessToken ? (
+              <>
+                <Link to="/dashboard" className="text-on-surface-variant hover:text-on-surface transition-colors">Dashboard</Link>
+                <Link to="/contributions" className="text-on-surface-variant hover:text-on-surface transition-colors">Contribuições</Link>
+                <Link to="/reports" className="text-on-surface-variant hover:text-on-surface transition-colors">Relatórios</Link>
+              </>
+            ) : (
+              <>
+                <Link to="/login" className="text-on-surface-variant hover:text-on-surface transition-colors">Login</Link>
+                <Link to="/register" className="btn-secondary text-xs py-1.5">Criar conta</Link>
+              </>
+            )}
           </nav>
         </div>
       </header>
-      <main className="mx-auto max-w-6xl p-6">
+      <main className="mx-auto max-w-6xl px-6 py-8">
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<LoginPage />} />

@@ -31,41 +31,53 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow mt-8">
-      <h1 className="text-2xl font-bold mb-4">Cadastro</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Email</label>
-          <input
-            type="email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-            required
-          />
+    <div className="flex min-h-[70vh] items-center justify-center">
+      <div className="w-full max-w-sm">
+        <div className="mb-8">
+          <p className="text-xs font-semibold tracking-widest uppercase text-on-surface-variant">Novo acesso</p>
+          <h1 className="mt-2 text-3xl font-semibold text-on-surface">Criar conta</h1>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Senha</label>
-          <input
-            type="password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-            required
-          />
+        <div className="card">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label className="field-label">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                className="mt-1.5 block w-full px-3 py-2"
+                placeholder="you@example.com"
+                required
+              />
+            </div>
+            <div>
+              <label className="field-label">Senha</label>
+              <input
+                type="password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                className="mt-1.5 block w-full px-3 py-2"
+                placeholder="••••••••"
+                required
+              />
+            </div>
+            {error && (
+              <p className="text-xs text-error bg-error/10 px-3 py-2 rounded-md">{error}</p>
+            )}
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn-primary w-full"
+            >
+              {loading ? 'Cadastrando...' : 'Criar conta'}
+            </button>
+          </form>
+          <p className="mt-5 text-center text-xs text-on-surface-variant">
+            Já tem conta?{' '}
+            <Link to="/login" className="text-primary hover:underline">Faça login</Link>
+          </p>
         </div>
-        {error && <div className="text-red-600">{error}</div>}
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full inline-flex justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700"
-        >
-          {loading ? 'Cadastrando...' : 'Cadastrar'}
-        </button>
-      </form>
-      <p className="mt-4 text-sm text-gray-600">
-        Já tem conta? <Link to="/login" className="text-indigo-600">Faça login</Link>
-      </p>
+      </div>
     </div>
   )
 }

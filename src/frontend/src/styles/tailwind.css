@@ -1,5 +1,99 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-html, body, #root { height: 100%; }
+@layer base {
+  html, body, #root {
+    height: 100%;
+    background-color: #10141a;
+    color: #e6edf3;
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  /* Ghost border for inputs */
+  input, select, textarea {
+    @apply bg-surface-container-lowest text-on-surface border border-outline-variant/30 
+           focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/10
+           placeholder:text-on-surface-variant/50 rounded-md transition-colors;
+  }
+
+  /* Remove default date picker styling issues on dark bg */
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.7);
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0a0e14;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #30363d;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #8b949e;
+  }
+}
+
+@layer components {
+  /* Primary CTA Button */
+  .btn-primary {
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-semibold
+           bg-primary-gradient text-on-primary transition-opacity hover:opacity-90 
+           disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  /* Secondary Button */
+  .btn-secondary {
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-semibold
+           bg-surface-container-high text-on-surface border border-primary/20
+           hover:border-primary/50 transition-colors disabled:opacity-40;
+  }
+
+  /* Tertiary / ghost Button */
+  .btn-ghost {
+    @apply inline-flex items-center justify-center px-3 py-1.5 rounded-md text-sm font-medium
+           text-primary hover:underline transition-colors disabled:opacity-40;
+  }
+
+  /* Card / panel surface */
+  .card {
+    @apply bg-surface-container-high rounded-md p-4;
+  }
+
+  /* Metric card — elevated layer */
+  .metric-card {
+    @apply bg-surface-container p-3 rounded-md;
+  }
+
+  /* Form input label */
+  .field-label {
+    @apply block text-xs font-medium tracking-wide text-on-surface-variant uppercase;
+  }
+
+  /* Status chips */
+  .chip-neutral {
+    @apply inline-block text-xs px-2 py-0.5 rounded-sm bg-secondary-container text-on-secondary-container;
+  }
+
+  .chip-approved {
+    @apply inline-block text-xs px-2 py-0.5 rounded-sm bg-primary/10 text-primary;
+  }
+
+  .chip-warning {
+    @apply inline-block text-xs px-2 py-0.5 rounded-sm bg-tertiary/10 text-tertiary;
+  }
+}
+

@@ -124,59 +124,63 @@ export default function DashboardPage() {
 
   if (loadingProfile) {
     return (
-      <div className="max-w-3xl mx-auto p-6 bg-white rounded-lg shadow mt-8">
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="mt-4 text-gray-700">Carregando perfil...</p>
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <p className="text-sm text-on-surface-variant">Carregando perfil...</p>
       </div>
     )
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-6 bg-white rounded-lg shadow mt-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Dashboard</h1>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-xs font-semibold tracking-widest uppercase text-on-surface-variant">Visão geral</p>
+          <h1 className="mt-1 text-3xl font-semibold text-on-surface">Dashboard</h1>
+          {message && <p className="mt-1 text-sm text-on-surface-variant">{message}</p>}
+        </div>
         <button
           onClick={handleLogout}
-          className="rounded-md bg-red-600 px-4 py-2 text-white hover:bg-red-700"
+          className="btn-secondary text-xs"
         >
           Sair
         </button>
       </div>
-      <p className="mt-4 text-gray-700">{message}</p>
+
+      {/* User info */}
       {user && (
-        <div className="mt-6 rounded-lg border border-gray-200 p-4">
-          <p className="text-sm text-gray-600">Usuário autenticado:</p>
-          <p className="mt-2 font-semibold">{user.email}</p>
-          <p className="text-sm text-gray-500">ID: {user.subject}</p>
+        <div className="card flex items-center justify-between gap-4">
+          <div>
+            <p className="text-xs text-on-surface-variant field-label">Usuário autenticado</p>
+            <p className="mt-1 font-semibold text-on-surface">{user.email}</p>
+          </div>
+          <p className="text-xs text-on-surface-variant font-mono">{user.subject}</p>
         </div>
       )}
 
-      <div className="mt-6 rounded-lg border border-gray-200 p-4">
+      {/* Date scope */}
+      <div className="card">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm text-gray-600">Escopo do Dashboard</p>
-          <button
-            type="button"
-            onClick={clearRange}
-            className="text-sm text-indigo-700 hover:underline"
-          >
+          <p className="text-xs font-semibold tracking-widest uppercase text-on-surface-variant">Período analisado</p>
+          <button type="button" onClick={clearRange} className="btn-ghost text-xs py-0">
             Limpar período
           </button>
         </div>
 
         <div className="mt-3 grid gap-3 md:grid-cols-2">
-          <label className="text-sm text-slate-700">
+          <label className="text-xs text-on-surface-variant">
             De
             <input
-              className="mt-1 w-full rounded border border-slate-300 px-3 py-2"
+              className="mt-1.5 w-full px-3 py-2"
               type="date"
               value={from}
               onChange={event => setFrom(event.target.value)}
             />
           </label>
-          <label className="text-sm text-slate-700">
+          <label className="text-xs text-on-surface-variant">
             Até
             <input
-              className="mt-1 w-full rounded border border-slate-300 px-3 py-2"
+              className="mt-1.5 w-full px-3 py-2"
               type="date"
               value={to}
               onChange={event => setTo(event.target.value)}
@@ -184,66 +188,73 @@ export default function DashboardPage() {
           </label>
         </div>
 
+        {/* Metrics */}
         <div className="mt-4 grid gap-3 md:grid-cols-3">
-          <div className="rounded border border-slate-200 bg-slate-50 p-3">
-            <p className="text-xs text-slate-500">Contribuições</p>
-            <p className="mt-1 text-xl font-semibold text-slate-900">{formatNumber(metricsQuery.data?.totalContributions ?? 0)}</p>
+          <div className="metric-card">
+            <p className="text-xs text-on-surface-variant">Contribuições</p>
+            <p className="mt-1 text-2xl font-semibold text-on-surface">{formatNumber(metricsQuery.data?.totalContributions ?? 0)}</p>
           </div>
-          <div className="rounded border border-slate-200 bg-slate-50 p-3">
-            <p className="text-xs text-slate-500">Commits</p>
-            <p className="mt-1 text-xl font-semibold text-slate-900">{formatNumber(metricsQuery.data?.commitCount ?? 0)}</p>
+          <div className="metric-card">
+            <p className="text-xs text-on-surface-variant">Commits</p>
+            <p className="mt-1 text-2xl font-semibold text-on-surface">{formatNumber(metricsQuery.data?.commitCount ?? 0)}</p>
           </div>
-          <div className="rounded border border-slate-200 bg-slate-50 p-3">
-            <p className="text-xs text-slate-500">PRs aprovados</p>
-            <p className="mt-1 text-xl font-semibold text-slate-900">{formatNumber(metricsQuery.data?.approvedPullRequestCount ?? 0)}</p>
+          <div className="metric-card">
+            <p className="text-xs text-on-surface-variant">PRs aprovados</p>
+            <p className="mt-1 text-2xl font-semibold text-primary">{formatNumber(metricsQuery.data?.approvedPullRequestCount ?? 0)}</p>
           </div>
         </div>
 
         <div className="mt-3 grid gap-3 md:grid-cols-2">
-          <div className="rounded border border-slate-200 bg-slate-50 p-3">
-            <p className="text-xs text-slate-500">Relatórios gerados</p>
-            <p className="mt-1 text-xl font-semibold text-slate-900">{formatNumber(metricsQuery.data?.reportsCount ?? 0)}</p>
+          <div className="metric-card">
+            <p className="text-xs text-on-surface-variant">Relatórios gerados</p>
+            <p className="mt-1 text-2xl font-semibold text-on-surface">{formatNumber(metricsQuery.data?.reportsCount ?? 0)}</p>
           </div>
-          <div className="rounded border border-slate-200 bg-slate-50 p-3">
-            <p className="text-xs text-slate-500">Último relatório</p>
-            <p className="mt-1 text-sm font-semibold text-slate-900">{metricsQuery.data?.latestReportAt ? new Date(metricsQuery.data.latestReportAt).toLocaleString() : 'Sem relatórios'}</p>
+          <div className="metric-card">
+            <p className="text-xs text-on-surface-variant">Último relatório</p>
+            <p className="mt-1 text-sm font-semibold text-on-surface">
+              {metricsQuery.data?.latestReportAt
+                ? new Date(metricsQuery.data.latestReportAt).toLocaleString()
+                : <span className="text-on-surface-variant">Sem relatórios</span>
+              }
+            </p>
           </div>
         </div>
 
         {metricsQuery.isLoading && (
-          <p className="mt-3 text-sm text-slate-500">Calculando métricas do período...</p>
+          <p className="mt-3 text-xs text-on-surface-variant">Calculando métricas do período...</p>
         )}
         {metricsQuery.isError && (
-          <p className="mt-3 text-sm text-amber-700">Não foi possível carregar métricas agregadas com o período informado.</p>
+          <p className="mt-3 text-xs text-tertiary">Não foi possível carregar métricas para o período informado.</p>
         )}
       </div>
 
-      <div className="mt-6 rounded-lg border border-gray-200 p-4">
-        <p className="text-sm text-gray-600">Integração GitHub</p>
+      {/* GitHub integration */}
+      <div className="card">
+        <p className="text-xs font-semibold tracking-widest uppercase text-on-surface-variant">Integração GitHub</p>
 
         {githubStatusQuery.isLoading && (
-          <p className="mt-2 text-sm text-gray-500">Verificando status da conta GitHub...</p>
+          <p className="mt-3 text-sm text-on-surface-variant">Verificando status da conta GitHub...</p>
         )}
 
         {!githubStatusQuery.isLoading && githubLinked && (
-          <div className="mt-3 space-y-3">
-            <p className="text-sm text-green-700">Conta GitHub vinculada com sucesso.</p>
-            <p className="text-sm text-gray-600">
-              Repositórios selecionados: <strong>{selectedRepositories.length}</strong>
+          <div className="mt-4 space-y-3">
+            <p className="text-sm text-success">Conta GitHub vinculada com sucesso.</p>
+            <p className="text-sm text-on-surface-variant">
+              Repositórios selecionados:{' '}
+              <span className="font-semibold text-on-surface">{selectedRepositories.length}</span>
             </p>
 
             {selectedRepositories.length > 0 && (
-              <ul className="list-disc pl-5 text-sm text-gray-700">
+              <ul className="space-y-1">
                 {selectedRepositories.slice(0, 5).map(repo => (
-                  <li key={repo.id}>{repo.fullName}</li>
+                  <li key={repo.id} className="text-xs text-on-surface-variant font-mono bg-surface-container-lowest px-3 py-1.5 rounded-sm">
+                    {repo.fullName}
+                  </li>
                 ))}
               </ul>
             )}
 
-            <button
-              onClick={goToRepositorySelection}
-              className="rounded-md bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700"
-            >
+            <button onClick={goToRepositorySelection} className="btn-secondary text-xs">
               Gerenciar Repositórios
             </button>
           </div>
@@ -253,29 +264,24 @@ export default function DashboardPage() {
           <button
             onClick={beginGitHubLink}
             disabled={loadingGitHub}
-            className="mt-4 rounded-md bg-slate-800 px-4 py-2 text-white hover:bg-slate-900 disabled:opacity-60"
+            className="mt-4 btn-primary"
           >
-            {loadingGitHub ? 'Redirecionando para o GitHub...' : 'Conectar GitHub'}
+            {loadingGitHub ? 'Redirecionando...' : 'Conectar GitHub'}
           </button>
         )}
 
         {githubStatusQuery.isError && (
-          <p className="mt-3 text-sm text-amber-700">Não foi possível validar a integração GitHub no momento.</p>
+          <p className="mt-3 text-xs text-tertiary">Não foi possível validar a integração GitHub no momento.</p>
         )}
       </div>
 
-      <div className="mt-6 rounded-lg border border-gray-200 p-4">
-        <p className="text-sm text-gray-600">Ações rápidas</p>
+      {/* Quick actions */}
+      <div className="card">
+        <p className="text-xs font-semibold tracking-widest uppercase text-on-surface-variant">Ações rápidas</p>
         <div className="mt-3 flex flex-wrap gap-2">
-          <Link className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50" to="/contributions">
-            Ver Contribuições
-          </Link>
-          <Link className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50" to="/reports">
-            Ver Relatórios
-          </Link>
-          <Link className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50" to="/github/repositories">
-            Ajustar Repositórios
-          </Link>
+          <Link className="btn-secondary text-xs" to="/contributions">Ver Contribuições</Link>
+          <Link className="btn-secondary text-xs" to="/reports">Ver Relatórios</Link>
+          <Link className="btn-secondary text-xs" to="/github/repositories">Ajustar Repositórios</Link>
         </div>
       </div>
     </div>

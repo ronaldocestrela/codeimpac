@@ -83,61 +83,66 @@ export default function RepositorySelectionPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow mt-8">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6">
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Repositórios GitHub</h1>
-          <p className="mt-1 text-sm text-gray-600">Selecione um repositório e dispare a sincronização manual.</p>
+          <p className="text-xs font-semibold tracking-widest uppercase text-on-surface-variant">GitHub</p>
+          <h1 className="mt-1 text-3xl font-semibold text-on-surface">Repositórios</h1>
+          <p className="mt-1 text-sm text-on-surface-variant">Selecione repositórios e dispare a sincronização manual.</p>
         </div>
-        <button onClick={() => navigate('/dashboard')} className="text-blue-600">Voltar ao dashboard</button>
+        <button onClick={() => navigate('/dashboard')} className="btn-ghost text-xs">← Dashboard</button>
       </div>
 
-      {loading && <p className="mt-6">Carregando repositórios...</p>}
-      {error && <p className="mt-6 text-red-600">{error}</p>}
-      {success && <p className="mt-6 text-green-700">{success}</p>}
+      {loading && <p className="text-sm text-on-surface-variant">Carregando repositórios...</p>}
+      {error && <p className="text-sm text-error bg-error/10 px-3 py-2 rounded-md">{error}</p>}
+      {success && <p className="text-sm text-success bg-success/10 px-3 py-2 rounded-md">{success}</p>}
 
       {!loading && !error && repositories.length === 0 && (
-        <p className="mt-6 text-gray-700">Nenhum repositório encontrado para esta conta GitHub.</p>
+        <p className="text-sm text-on-surface-variant">Nenhum repositório encontrado para esta conta GitHub.</p>
       )}
 
-      <div className="mt-6 space-y-4">
+      <div className="space-y-2">
         {repositories.map(repo => (
-          <div key={repo.id} className="rounded border border-gray-200 p-4">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-start gap-3">
-                <input
-                  type="checkbox"
-                  className="mt-1 h-4 w-4"
-                  checked={Boolean(selectedIds[repo.id])}
-                  onChange={() => toggleSelected(repo.id)}
-                  aria-label={`Selecionar ${repo.fullName}`}
-                />
-                <div>
-                  <p className="text-lg font-semibold">{repo.fullName}</p>
-                  <p className="text-sm text-gray-500">{repo.private ? 'Privado' : 'Público'}</p>
-                </div>
+          <div key={repo.id} className="card flex items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <input
+                type="checkbox"
+                className="mt-1 h-4 w-4 accent-primary"
+                checked={Boolean(selectedIds[repo.id])}
+                onChange={() => toggleSelected(repo.id)}
+                aria-label={`Selecionar ${repo.fullName}`}
+              />
+              <div>
+                <p className="font-semibold text-on-surface font-mono text-sm">{repo.fullName}</p>
+                <p className="mt-0.5 text-xs text-on-surface-variant">
+                  <span className={repo.private ? 'chip-warning' : 'chip-neutral'}>
+                    {repo.private ? 'Privado' : 'Público'}
+                  </span>
+                </p>
               </div>
-              <button
-                className="rounded bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700"
-                onClick={() => handleSync(repo.id)}
-                disabled={syncingId === repo.id || !selectedIds[repo.id]}
-              >
-                {syncingId === repo.id ? 'Sincronizando...' : 'Sincronizar'}
-              </button>
             </div>
+            <button
+              className="btn-secondary text-xs"
+              onClick={() => handleSync(repo.id)}
+              disabled={syncingId === repo.id || !selectedIds[repo.id]}
+            >
+              {syncingId === repo.id ? 'Sincronizando...' : 'Sincronizar'}
+            </button>
           </div>
         ))}
       </div>
 
-      <div className="mt-6 flex justify-end">
-        <button
-          className="rounded bg-slate-800 px-4 py-2 text-white hover:bg-slate-900 disabled:opacity-60"
-          onClick={handleSaveSelection}
-          disabled={savingSelection}
-        >
-          {savingSelection ? 'Salvando seleção...' : 'Salvar seleção'}
-        </button>
-      </div>
+      {repositories.length > 0 && (
+        <div className="flex justify-end">
+          <button
+            className="btn-primary"
+            onClick={handleSaveSelection}
+            disabled={savingSelection}
+          >
+            {savingSelection ? 'Salvando...' : 'Salvar seleção'}
+          </button>
+        </div>
+      )}
     </div>
   )
 }
