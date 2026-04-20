@@ -37,7 +37,8 @@ public class GitHubCommitRepository : IGitHubCommitRepository
 
         if (to.HasValue)
         {
-            query = query.Where(c => c.CommittedAt <= to.Value);
+            var exclusiveUpperBound = to.Value.Date.AddDays(1);
+            query = query.Where(c => c.CommittedAt < exclusiveUpperBound);
         }
 
         return await query

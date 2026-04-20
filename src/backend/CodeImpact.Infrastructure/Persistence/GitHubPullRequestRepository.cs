@@ -37,7 +37,8 @@ public class GitHubPullRequestRepository : IGitHubPullRequestRepository
 
         if (to.HasValue)
         {
-            query = query.Where(pr => pr.CreatedAtGitHub <= to.Value);
+            var exclusiveUpperBound = to.Value.Date.AddDays(1);
+            query = query.Where(pr => pr.CreatedAtGitHub < exclusiveUpperBound);
         }
 
         return await query
