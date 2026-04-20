@@ -19,7 +19,7 @@ public class GitHubPullRequestRepository : IGitHubPullRequestRepository
             pr => pr.UserId == userId && pr.RepositoryId == repositoryId && pr.GitHubPullRequestId == gitHubPullRequestId);
     }
 
-    public async Task<IReadOnlyCollection<GitHubPullRequest>> ListByUserAsync(Guid userId, long? repositoryId, DateTime? from, DateTime? to)
+    public async Task<IReadOnlyCollection<GitHubPullRequest>> ListByUserAsync(Guid userId, long? repositoryId, string? organizationLogin, DateTime? from, DateTime? to)
     {
         var query = _dbContext.GitHubPullRequests
             .AsNoTracking()
@@ -28,6 +28,11 @@ public class GitHubPullRequestRepository : IGitHubPullRequestRepository
         if (repositoryId.HasValue)
         {
             query = query.Where(pr => pr.RepositoryId == repositoryId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(organizationLogin))
+        {
+            query = query.Where(pr => EF.Functions.Like(pr.RepositoryFullName, organizationLogin + "/%"));
         }
 
         if (from.HasValue)

@@ -31,11 +31,18 @@ namespace CodeImpact.Infrastructure.Persistence
                 .FirstOrDefaultAsync(x => x.UserId == userId && x.RepositoryId == repositoryId);
         }
 
-        public async Task ReplaceForUserAsync(Guid userId, Guid gitHubAccountId, IEnumerable<GitHubRepositorySelection> selections)
+        public async Task ReplaceForUserAsync(Guid userId, Guid gitHubAccountId, IEnumerable<GitHubRepositorySelection> selections, string? ownerLoginScope = null)
         {
             var existing = await _dbContext.GitHubRepositorySelections
                 .Where(x => x.UserId == userId)
                 .ToListAsync();
+
+            if (!string.IsNullOrWhiteSpace(ownerLoginScope))
+            {
+                existing = existing
+                    .Where(x => string.Equals(x.OwnerLogin, ownerLoginScope, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
 
             _dbContext.GitHubRepositorySelections.RemoveRange(existing);
             _dbContext.GitHubRepositorySelections.AddRange(selections);

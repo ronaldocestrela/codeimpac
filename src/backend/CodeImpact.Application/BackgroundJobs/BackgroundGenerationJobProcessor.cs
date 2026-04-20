@@ -79,7 +79,7 @@ public sealed class BackgroundGenerationJobProcessor
                           ?? throw new InvalidOperationException("Payload invalido para job de relatorio executivo.");
 
             var report = await _reportOrchestrator.GenerateAndPersistAsync(
-                new ExecutiveReportRequest(execution.UserId, payload.RepositoryId, payload.From, payload.To));
+                new ExecutiveReportRequest(execution.UserId, payload.RepositoryId, payload.OrganizationLogin, payload.From, payload.To));
 
             execution.MarkSucceeded(JsonSerializer.Serialize(new ExecutiveReportJobResult(report.Id), CamelCaseJsonOptions));
             await _jobRepository.UpdateAsync(execution);
@@ -95,5 +95,5 @@ public sealed class BackgroundGenerationJobProcessor
 }
 
 public sealed record ContributionSummaryJobRequest(long? RepositoryId, DateTime? From, DateTime? To);
-public sealed record ExecutiveReportJobRequest(long? RepositoryId, DateTime? From, DateTime? To);
+public sealed record ExecutiveReportJobRequest(long? RepositoryId, string? OrganizationLogin, DateTime? From, DateTime? To);
 public sealed record ExecutiveReportJobResult(Guid ReportId);

@@ -36,10 +36,12 @@ namespace CodeImpact.Application.GitHub.Commands
                     repo.Id,
                     repo.Name,
                     repo.FullName,
-                    repo.Private))
+                    repo.Private,
+                    repo.OwnerLogin,
+                    repo.OwnerType))
                 .ToList();
 
-            await _selectionRepository.ReplaceForUserAsync(request.UserId, account.Id, selections);
+            await _selectionRepository.ReplaceForUserAsync(request.UserId, account.Id, selections, request.OrganizationLogin);
             return Unit.Value;
         }
     }

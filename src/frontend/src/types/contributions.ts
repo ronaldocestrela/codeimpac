@@ -39,6 +39,7 @@ export interface ContributionDetail {
 
 export interface ContributionsFilters {
   repositoryId?: number
+  organizationLogin?: string
   from?: string
   to?: string
   page?: number

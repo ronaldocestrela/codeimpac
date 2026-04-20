@@ -50,6 +50,7 @@ function ListItemButton({
 }
 
 export default function ReportsPage() {
+  const [organizationLogin, setOrganizationLogin] = useState('')
   const [repositoryId, setRepositoryId] = useState('')
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
@@ -73,9 +74,21 @@ export default function ReportsPage() {
 
   const filters = useMemo<ExecutiveReportFilters>(() => ({
     repositoryId: repositoryId ? Number(repositoryId) : undefined,
+    organizationLogin: organizationLogin || undefined,
     from: from || undefined,
     to: to || undefined
-  }), [repositoryId, from, to])
+  }), [repositoryId, organizationLogin, from, to])
+
+  const organizations = useMemo(() => {
+    const owners = new Set<string>()
+    ;(repositoriesQuery.data ?? []).forEach(repo => {
+      if (repo.ownerLogin) {
+        owners.add(repo.ownerLogin)
+      }
+    })
+
+    return Array.from(owners).sort((a, b) => a.localeCompare(b, 'pt-BR'))
+  }, [repositoriesQuery.data])
 
   const reportsQuery = useQuery({
     queryKey: ['reports', filters],
@@ -135,7 +148,14 @@ export default function ReportsPage() {
   })
 
   const reports = reportsQuery.data ?? []
-  const repositories = repositoriesQuery.data ?? []
+  const repositories = useMemo(() => {
+    const allRepositories = repositoriesQuery.data ?? []
+    if (!organizationLogin) {
+      return allRepositories
+    }
+
+    return allRepositories.filter(repo => repo.ownerLogin === organizationLogin)
+  }, [repositoriesQuery.data, organizationLogin])
 
   const handleExport = async () => {
     if (!detailQuery.data) {
@@ -171,7 +191,27 @@ export default function ReportsPage() {
           <p className="mt-1 text-sm text-on-surface-variant">Gere e consulte relatórios orientados à liderança com métricas e evidências rastreáveis.</p>
         </div>
 
-        <div className="mt-5 grid gap-3 md:grid-cols-3">
+        <div className="mt-5 grid gap-3 md:grid-cols-4">
+          <label className="text-xs text-on-surface-variant">
+            Organização
+            <select
+              className="mt-1.5 w-full px-3 py-2"
+              value={organizationLogin}
+              onChange={event => {
+                setOrganizationLogin(event.target.value)
+                setRepositoryId('')
+              }}
+              disabled={repositoriesQuery.isLoading || organizations.length === 0}
+            >
+              <option value="">Todas as organizações</option>
+              {organizations.map(owner => (
+                <option key={owner} value={owner}>
+                  {owner}
+                </option>
+              ))}
+            </select>
+          </label>
+
           <label className="text-xs text-on-surface-variant">
             Repositório
             <select

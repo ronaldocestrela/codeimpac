@@ -53,7 +53,7 @@ public class ReportGenerationTests
             new StubPullRequestRepository(pullRequests),
             new StubSelectionRepository(new[]
             {
-                new GitHubRepositorySelection(userId, Guid.NewGuid(), 100, "repo", "org/repo", false)
+                new GitHubRepositorySelection(userId, Guid.NewGuid(), 100, "repo", "org/repo", false, "org", "Organization")
             }),
             reportRepository,
             new StubLLMService("""
@@ -78,7 +78,7 @@ public class ReportGenerationTests
 """),
             NullLogger<ExecutiveReportOrchestrator>.Instance);
 
-        var result = await orchestrator.GenerateAndPersistAsync(new ExecutiveReportRequest(userId, null, null, null));
+        var result = await orchestrator.GenerateAndPersistAsync(new ExecutiveReportRequest(userId, null, null, null, null));
 
         Assert.NotEqual(Guid.Empty, result.Id);
         Assert.Equal(1, result.Metrics.CommitCount);
@@ -127,7 +127,7 @@ public class ReportGenerationTests
         };
 
         var handler = new GetExecutiveReportsQueryHandler(repository);
-        var result = await handler.Handle(new GetExecutiveReportsQuery(userId, null, null, null), CancellationToken.None);
+        var result = await handler.Handle(new GetExecutiveReportsQuery(userId, null, null, null, null), CancellationToken.None);
 
         Assert.Single(result);
         var item = result.Single();
@@ -149,7 +149,7 @@ public class ReportGenerationTests
             NullLogger<ExecutiveReportOrchestrator>.Instance);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            orchestrator.GenerateAndPersistAsync(new ExecutiveReportRequest(userId, null, null, null)));
+            orchestrator.GenerateAndPersistAsync(new ExecutiveReportRequest(userId, null, null, null, null)));
 
         Assert.Null(reportRepository.AddedReport);
     }
@@ -190,7 +190,7 @@ public class ReportGenerationTests
         var handler = new GetExecutiveReportsQueryHandler(repository);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            handler.Handle(new GetExecutiveReportsQuery(userId, null, null, null), CancellationToken.None));
+            handler.Handle(new GetExecutiveReportsQuery(userId, null, null, null, null), CancellationToken.None));
     }
 
     private sealed class StubLLMService : ILLMService
@@ -218,7 +218,7 @@ public class ReportGenerationTests
         public Task<GitHubCommit?> GetByUserRepositoryAndShaAsync(Guid userId, long repositoryId, string commitSha)
             => Task.FromResult<GitHubCommit?>(null);
 
-        public Task<IReadOnlyCollection<GitHubCommit>> ListByUserAsync(Guid userId, long? repositoryId, DateTime? from, DateTime? to)
+        public Task<IReadOnlyCollection<GitHubCommit>> ListByUserAsync(Guid userId, long? repositoryId, string? organizationLogin, DateTime? from, DateTime? to)
             => Task.FromResult(_items);
 
         public Task<GitHubCommit?> GetByIdAsync(Guid userId, Guid commitId)
@@ -241,7 +241,7 @@ public class ReportGenerationTests
         public Task<GitHubPullRequest?> GetByUserRepositoryAndGitHubPullRequestIdAsync(Guid userId, long repositoryId, long gitHubPullRequestId)
             => Task.FromResult<GitHubPullRequest?>(null);
 
-        public Task<IReadOnlyCollection<GitHubPullRequest>> ListByUserAsync(Guid userId, long? repositoryId, DateTime? from, DateTime? to)
+        public Task<IReadOnlyCollection<GitHubPullRequest>> ListByUserAsync(Guid userId, long? repositoryId, string? organizationLogin, DateTime? from, DateTime? to)
             => Task.FromResult(_items);
 
         public Task<GitHubPullRequest?> GetByIdAsync(Guid userId, Guid pullRequestId)
@@ -267,7 +267,7 @@ public class ReportGenerationTests
         public Task<GitHubRepositorySelection?> GetByUserAndRepositoryIdAsync(Guid userId, long repositoryId)
             => Task.FromResult(_items.FirstOrDefault(item => item.RepositoryId == repositoryId));
 
-        public Task ReplaceForUserAsync(Guid userId, Guid gitHubAccountId, IEnumerable<GitHubRepositorySelection> selections)
+        public Task ReplaceForUserAsync(Guid userId, Guid gitHubAccountId, IEnumerable<GitHubRepositorySelection> selections, string? ownerLoginScope = null)
             => Task.CompletedTask;
     }
 
@@ -286,7 +286,7 @@ public class ReportGenerationTests
         public Task<Report?> GetByIdAsync(Guid userId, Guid reportId)
             => Task.FromResult(ListResult.FirstOrDefault(r => r.UserId == userId && r.Id == reportId) ?? AddedReport);
 
-        public Task<IReadOnlyCollection<Report>> ListByUserAsync(Guid userId, long? repositoryId, DateTime? from, DateTime? to)
+        public Task<IReadOnlyCollection<Report>> ListByUserAsync(Guid userId, long? repositoryId, string? organizationLogin, DateTime? from, DateTime? to)
             => Task.FromResult(ListResult);
     }
 }

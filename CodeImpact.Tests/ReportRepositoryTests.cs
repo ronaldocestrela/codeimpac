@@ -34,6 +34,7 @@ public class ReportRepositoryTests
         var result = await repository.ListByUserAsync(
             userId,
             repositoryId: null,
+            organizationLogin: null,
             from: new DateTime(2026, 04, 05, 0, 0, 0, DateTimeKind.Utc),
             to: new DateTime(2026, 04, 20, 0, 0, 0, DateTimeKind.Utc));
 

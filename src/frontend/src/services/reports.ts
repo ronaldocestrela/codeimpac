@@ -6,6 +6,7 @@ import type { ReportExportFormat } from '../utils/reportExport'
 export const enqueueExecutiveReportGeneration = async (filters: ExecutiveReportFilters = {}): Promise<BackgroundJobEnqueueResponse> => {
   const response = await api.post<BackgroundJobEnqueueResponse>('github/reports', {
     repositoryId: filters.repositoryId,
+    organizationLogin: filters.organizationLogin,
     from: filters.from,
     to: filters.to
   })
@@ -17,6 +18,7 @@ export const getExecutiveReports = async (filters: ExecutiveReportFilters = {}):
   const response = await api.get<ExecutiveReportListItem[]>('github/reports', {
     params: {
       repositoryId: filters.repositoryId,
+      organizationLogin: filters.organizationLogin,
       from: filters.from,
       to: filters.to
     }

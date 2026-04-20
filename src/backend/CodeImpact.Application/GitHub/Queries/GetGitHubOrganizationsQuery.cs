@@ -5,5 +5,5 @@ using MediatR;
 
 namespace CodeImpact.Application.GitHub.Queries
 {
-    public sealed record GetGitHubRepositoriesQuery(Guid UserId, string? OrganizationLogin) : IRequest<IEnumerable<GitHubRepositoryDto>>;
+    public sealed record GetGitHubOrganizationsQuery(Guid UserId) : IRequest<IEnumerable<GitHubOrganizationDto>>;
 }

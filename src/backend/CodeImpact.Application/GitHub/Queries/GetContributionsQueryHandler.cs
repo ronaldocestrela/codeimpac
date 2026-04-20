@@ -34,8 +34,8 @@ public sealed class GetContributionsQueryHandler : IRequestHandler<GetContributi
             throw new InvalidOperationException("Tamanho de pagina invalido: 'pageSize' deve estar entre 1 e 100.");
         }
 
-        var commits = await _commitRepository.ListByUserAsync(request.UserId, request.RepositoryId, request.From, request.To);
-        var pullRequests = await _pullRequestRepository.ListByUserAsync(request.UserId, request.RepositoryId, request.From, request.To);
+        var commits = await _commitRepository.ListByUserAsync(request.UserId, request.RepositoryId, request.OrganizationLogin, request.From, request.To);
+        var pullRequests = await _pullRequestRepository.ListByUserAsync(request.UserId, request.RepositoryId, request.OrganizationLogin, request.From, request.To);
 
         var items = commits
             .Select(commit => new ContributionListItemDto(

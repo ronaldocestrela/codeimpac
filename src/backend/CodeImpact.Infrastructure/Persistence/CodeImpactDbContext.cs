@@ -46,6 +46,8 @@ namespace CodeImpact.Infrastructure.Persistence
                 entity.HasIndex(g => new { g.UserId, g.RepositoryId }).IsUnique();
                 entity.Property(g => g.Name).HasMaxLength(256).IsRequired();
                 entity.Property(g => g.FullName).HasMaxLength(512).IsRequired();
+                entity.Property(g => g.OwnerLogin).HasMaxLength(256).IsRequired();
+                entity.Property(g => g.OwnerType).HasMaxLength(64).IsRequired();
             });
 
             builder.Entity<GitHubCommit>(entity =>

@@ -76,7 +76,7 @@ namespace CodeImpact.WebApi.Controllers
         }
 
         [HttpGet("repositories")]
-        public async Task<IActionResult> GetRepositories()
+        public async Task<IActionResult> GetRepositories([FromQuery] string? organizationLogin)
         {
             var userId = GetUserId();
             if (userId == Guid.Empty)
@@ -84,8 +84,21 @@ namespace CodeImpact.WebApi.Controllers
                 return Unauthorized();
             }
 
-            var repositories = await _mediator.Send(new GetGitHubRepositoriesQuery(userId));
+            var repositories = await _mediator.Send(new GetGitHubRepositoriesQuery(userId, organizationLogin));
             return Ok(repositories);
+        }
+
+        [HttpGet("organizations")]
+        public async Task<IActionResult> GetOrganizations()
+        {
+            var userId = GetUserId();
+            if (userId == Guid.Empty)
+            {
+                return Unauthorized();
+            }
+
+            var organizations = await _mediator.Send(new GetGitHubOrganizationsQuery(userId));
+            return Ok(organizations);
         }
 
         [HttpGet("repositories/selected")]
@@ -112,7 +125,7 @@ namespace CodeImpact.WebApi.Controllers
 
             try
             {
-                await _mediator.Send(new UpdateSelectedGitHubRepositoriesCommand(userId, request.Repositories));
+                await _mediator.Send(new UpdateSelectedGitHubRepositoriesCommand(userId, request.Repositories, request.OrganizationLogin));
                 return NoContent();
             }
             catch (InvalidOperationException ex)
@@ -144,6 +157,7 @@ namespace CodeImpact.WebApi.Controllers
         [HttpGet("contributions")]
         public async Task<IActionResult> GetContributions(
             [FromQuery] long? repositoryId,
+            [FromQuery] string? organizationLogin,
             [FromQuery] DateTime? from,
             [FromQuery] DateTime? to,
             [FromQuery] int page = 1,
@@ -157,7 +171,7 @@ namespace CodeImpact.WebApi.Controllers
 
             try
             {
-                var contributions = await _mediator.Send(new GetContributionsQuery(userId, repositoryId, from, to, page, pageSize));
+                var contributions = await _mediator.Send(new GetContributionsQuery(userId, repositoryId, organizationLogin, from, to, page, pageSize));
                 return Ok(contributions);
             }
             catch (InvalidOperationException ex)
@@ -233,7 +247,7 @@ namespace CodeImpact.WebApi.Controllers
 
             try
             {
-                var job = await _mediator.Send(new EnqueueExecutiveReportJobCommand(userId, request.RepositoryId, request.From, request.To));
+                var job = await _mediator.Send(new EnqueueExecutiveReportJobCommand(userId, request.RepositoryId, request.OrganizationLogin, request.From, request.To));
                 return Accepted(job);
             }
             catch (InvalidOperationException ex)
@@ -261,7 +275,7 @@ namespace CodeImpact.WebApi.Controllers
         }
 
         [HttpGet("reports")]
-        public async Task<IActionResult> GetExecutiveReports([FromQuery] long? repositoryId, [FromQuery] DateTime? from, [FromQuery] DateTime? to)
+        public async Task<IActionResult> GetExecutiveReports([FromQuery] long? repositoryId, [FromQuery] string? organizationLogin, [FromQuery] DateTime? from, [FromQuery] DateTime? to)
         {
             var userId = GetUserId();
             if (userId == Guid.Empty)
@@ -269,7 +283,7 @@ namespace CodeImpact.WebApi.Controllers
                 return Unauthorized();
             }
 
-            var reports = await _mediator.Send(new GetExecutiveReportsQuery(userId, repositoryId, from, to));
+            var reports = await _mediator.Send(new GetExecutiveReportsQuery(userId, repositoryId, organizationLogin, from, to));
             return Ok(reports);
         }
 

@@ -1,4 +1,10 @@
 namespace CodeImpact.Application.GitHub.Dto
 {
-    public sealed record SelectedGitHubRepositoryDto(long Id, string Name, string FullName, bool Private);
+    public sealed record SelectedGitHubRepositoryDto(
+        long Id,
+        string Name,
+        string FullName,
+        bool Private,
+        string OwnerLogin,
+        string OwnerType);
 }

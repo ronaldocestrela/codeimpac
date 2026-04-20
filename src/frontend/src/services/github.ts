@@ -3,6 +3,7 @@ import axios from 'axios'
 import type {
   GitHubAuthorizeUrlResponse,
   GitHubAccount,
+  GitHubOrganization,
   GitHubRepository,
   UpdateGitHubSelectionPayload
 } from '../types/github'
@@ -34,8 +35,17 @@ export const getLinkedGitHubAccount = async (): Promise<GitHubAccount | null> =>
   }
 }
 
-export const getGitHubRepositories = async (): Promise<GitHubRepository[]> => {
-  const response = await api.get<GitHubRepository[]>('github/repositories')
+export const getGitHubRepositories = async (organizationLogin?: string): Promise<GitHubRepository[]> => {
+  const response = await api.get<GitHubRepository[]>('github/repositories', {
+    params: {
+      organizationLogin
+    }
+  })
+  return response.data
+}
+
+export const getGitHubOrganizations = async (): Promise<GitHubOrganization[]> => {
+  const response = await api.get<GitHubOrganization[]>('github/organizations')
   return response.data
 }
 

@@ -6,5 +6,5 @@ public interface IReportRepository
 {
     Task AddAsync(Report report);
     Task<Report?> GetByIdAsync(Guid userId, Guid reportId);
-    Task<IReadOnlyCollection<Report>> ListByUserAsync(Guid userId, long? repositoryId, DateTime? from, DateTime? to);
+    Task<IReadOnlyCollection<Report>> ListByUserAsync(Guid userId, long? repositoryId, string? organizationLogin, DateTime? from, DateTime? to);
 }

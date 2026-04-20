@@ -65,6 +65,7 @@ export interface ExecutiveReportListItem {
 
 export interface ExecutiveReportFilters {
   repositoryId?: number
+  organizationLogin?: string
   from?: string
   to?: string
 }

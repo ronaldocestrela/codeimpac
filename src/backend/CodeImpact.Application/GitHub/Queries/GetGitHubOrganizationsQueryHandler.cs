@@ -4,18 +4,17 @@ using System.Threading;
 using System.Threading.Tasks;
 using CodeImpact.Application.Common.Interfaces;
 using CodeImpact.Application.GitHub.Dto;
-using CodeImpact.Application.GitHub.Queries;
 using CodeImpact.Domain.Repositories;
 using MediatR;
 
 namespace CodeImpact.Application.GitHub.Queries
 {
-    public class GetGitHubRepositoriesQueryHandler : IRequestHandler<GetGitHubRepositoriesQuery, IEnumerable<GitHubRepositoryDto>>
+    public sealed class GetGitHubOrganizationsQueryHandler : IRequestHandler<GetGitHubOrganizationsQuery, IEnumerable<GitHubOrganizationDto>>
     {
         private readonly IGitHubService _gitHubService;
         private readonly IGitHubAccountRepository _gitHubAccountRepository;
 
-        public GetGitHubRepositoriesQueryHandler(
+        public GetGitHubOrganizationsQueryHandler(
             IGitHubService gitHubService,
             IGitHubAccountRepository gitHubAccountRepository)
         {
@@ -23,21 +22,15 @@ namespace CodeImpact.Application.GitHub.Queries
             _gitHubAccountRepository = gitHubAccountRepository;
         }
 
-        public async Task<IEnumerable<GitHubRepositoryDto>> Handle(GetGitHubRepositoriesQuery request, CancellationToken cancellationToken)
+        public async Task<IEnumerable<GitHubOrganizationDto>> Handle(GetGitHubOrganizationsQuery request, CancellationToken cancellationToken)
         {
             var account = await _gitHubAccountRepository.GetByUserIdAsync(request.UserId);
             if (account is null)
             {
-                return Enumerable.Empty<GitHubRepositoryDto>();
+                return Enumerable.Empty<GitHubOrganizationDto>();
             }
 
-            var repositories = await _gitHubService.GetUserRepositoriesAsync(account.EncryptedAccessToken);
-            if (string.IsNullOrWhiteSpace(request.OrganizationLogin))
-            {
-                return repositories;
-            }
-
-            return repositories.Where(repo => string.Equals(repo.OwnerLogin, request.OrganizationLogin, System.StringComparison.OrdinalIgnoreCase));
+            return await _gitHubService.GetUserOrganizationsAsync(account.EncryptedAccessToken);
         }
     }
 }

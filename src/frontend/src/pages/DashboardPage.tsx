@@ -261,9 +261,14 @@ export default function DashboardPage() {
               </ul>
             )}
 
-            <button onClick={goToRepositorySelection} className="btn-secondary text-xs">
-              Gerenciar Repositórios
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button onClick={goToRepositorySelection} className="btn-secondary text-xs">
+                Gerenciar Repositórios
+              </button>
+              <button onClick={beginGitHubLink} disabled={loadingGitHub} className="btn-secondary text-xs">
+                {loadingGitHub ? 'Redirecionando...' : 'Solicitar acesso a outras organizações'}
+              </button>
+            </div>
           </div>
         )}
 

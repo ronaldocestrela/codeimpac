@@ -85,3 +85,27 @@ dotnet user-secrets set "GitHub:ClientSecret" "SEU_CLIENT_SECRET" --project src/
 - `RedirectUri` igual ao callback cadastrado no GitHub.
 - `Scope` compatível com as necessidades do sistema.
 - Segredos fora de arquivos versionados.
+
+## Suporte a múltiplas organizações (atualização)
+
+O fluxo de integração agora suporta seleção de repositórios por organização dentro da mesma conta GitHub conectada.
+
+### O que mudou
+
+- A listagem de repositórios agora inclui metadados de owner:
+  - `ownerLogin`
+  - `ownerType`
+- A seleção de repositórios pode ser salva por escopo de organização sem apagar as seleções de outras organizações.
+- A geração e a listagem de relatórios aceitam filtro opcional por organização.
+- A consulta de contribuições também aceita filtro opcional por organização.
+
+### Endpoints com filtro por organização
+
+- `GET /api/github/repositories?organizationLogin={org}`
+- `GET /api/github/contributions?organizationLogin={org}`
+- `POST /api/github/reports` com `organizationLogin` no body
+- `GET /api/github/reports?organizationLogin={org}`
+
+### Observação de compatibilidade
+
+Se `organizationLogin` não for enviado, o comportamento permanece o mesmo: escopo global de repositórios acessíveis/selecionados.

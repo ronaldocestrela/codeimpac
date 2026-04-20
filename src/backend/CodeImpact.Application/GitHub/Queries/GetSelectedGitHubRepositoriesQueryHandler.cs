@@ -21,7 +21,13 @@ namespace CodeImpact.Application.GitHub.Queries
         {
             var selections = await _selectionRepository.GetByUserIdAsync(request.UserId);
             return selections
-                .Select(item => new SelectedGitHubRepositoryDto(item.RepositoryId, item.Name, item.FullName, item.Private))
+                .Select(item => new SelectedGitHubRepositoryDto(
+                    item.RepositoryId,
+                    item.Name,
+                    item.FullName,
+                    item.Private,
+                    item.OwnerLogin,
+                    item.OwnerType))
                 .ToList();
         }
     }

@@ -76,25 +76,80 @@ namespace CodeImpact.Infrastructure.Services
         public async Task<IEnumerable<GitHubRepositoryDto>> GetUserRepositoriesAsync(string encryptedAccessToken)
         {
             var accessToken = _tokenProtector.Unprotect(encryptedAccessToken);
-            var request = new HttpRequestMessage(HttpMethod.Get, "https://api.github.com/user/repos?per_page=100");
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-
-            var response = await _httpClient.SendAsync(request);
-            response.EnsureSuccessStatusCode();
-
-            var repos = await response.Content.ReadFromJsonAsync<IEnumerable<GitHubRepositoryResponse>>();
-            if (repos is null)
-            {
-                return new List<GitHubRepositoryDto>();
-            }
-
             var result = new List<GitHubRepositoryDto>();
-            foreach (var repo in repos)
+            var page = 1;
+
+            while (true)
             {
-                result.Add(new GitHubRepositoryDto(repo.Id, repo.Name, repo.FullName, repo.Private));
+                var request = new HttpRequestMessage(HttpMethod.Get, $"https://api.github.com/user/repos?per_page=100&page={page}");
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+                var response = await _httpClient.SendAsync(request);
+                response.EnsureSuccessStatusCode();
+
+                var repos = await response.Content.ReadFromJsonAsync<IEnumerable<GitHubRepositoryResponse>>();
+                var batch = repos?.ToList() ?? new List<GitHubRepositoryResponse>();
+
+                if (batch.Count == 0)
+                {
+                    break;
+                }
+
+                foreach (var repo in batch)
+                {
+                    result.Add(new GitHubRepositoryDto(
+                        repo.Id,
+                        repo.Name,
+                        repo.FullName,
+                        repo.Private,
+                        repo.Owner.Login,
+                        repo.Owner.Type));
+                }
+
+                if (batch.Count < 100)
+                {
+                    break;
+                }
+
+                page++;
             }
 
             return result;
+        }
+
+        public async Task<IEnumerable<GitHubOrganizationDto>> GetUserOrganizationsAsync(string encryptedAccessToken)
+        {
+            var accessToken = _tokenProtector.Unprotect(encryptedAccessToken);
+            var organizations = new List<GitHubOrganizationDto>();
+            var page = 1;
+
+            while (true)
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, $"https://api.github.com/user/orgs?per_page=100&page={page}");
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+                var response = await _httpClient.SendAsync(request);
+                response.EnsureSuccessStatusCode();
+
+                var result = await response.Content.ReadFromJsonAsync<IEnumerable<GitHubOrganizationResponse>>();
+                var batch = result?.ToList() ?? new List<GitHubOrganizationResponse>();
+
+                if (batch.Count == 0)
+                {
+                    break;
+                }
+
+                organizations.AddRange(batch.Select(item => new GitHubOrganizationDto(item.Id, item.Login, item.AvatarUrl ?? string.Empty)));
+
+                if (batch.Count < 100)
+                {
+                    break;
+                }
+
+                page++;
+            }
+
+            return organizations;
         }
 
         public async Task<IEnumerable<GitHubPullRequestDto>> GetPullRequestsAsync(string encryptedAccessToken, string repositoryFullName)
@@ -198,7 +253,13 @@ namespace CodeImpact.Infrastructure.Services
             [property: JsonPropertyName("id")] long Id,
             [property: JsonPropertyName("name")] string Name,
             [property: JsonPropertyName("full_name")] string FullName,
-            [property: JsonPropertyName("private")] bool Private);
+            [property: JsonPropertyName("private")] bool Private,
+            [property: JsonPropertyName("owner")] GitHubSimpleUser Owner);
+
+        private sealed record GitHubOrganizationResponse(
+            [property: JsonPropertyName("id")] long Id,
+            [property: JsonPropertyName("login")] string Login,
+            [property: JsonPropertyName("avatar_url")] string? AvatarUrl);
 
         private sealed record GitHubPullRequestResponse(
             [property: JsonPropertyName("id")] long Id,
@@ -233,6 +294,7 @@ namespace CodeImpact.Infrastructure.Services
             [property: JsonPropertyName("html_url")] string HtmlUrl);
 
         private sealed record GitHubSimpleUser(
-            [property: JsonPropertyName("login")] string Login);
+            [property: JsonPropertyName("login")] string Login,
+            [property: JsonPropertyName("type")] string Type);
     }
 }

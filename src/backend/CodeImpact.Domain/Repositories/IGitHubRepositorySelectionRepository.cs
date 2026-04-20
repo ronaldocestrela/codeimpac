@@ -9,6 +9,6 @@ namespace CodeImpact.Domain.Repositories
     {
         Task<IReadOnlyCollection<GitHubRepositorySelection>> GetByUserIdAsync(Guid userId);
         Task<GitHubRepositorySelection?> GetByUserAndRepositoryIdAsync(Guid userId, long repositoryId);
-        Task ReplaceForUserAsync(Guid userId, Guid gitHubAccountId, IEnumerable<GitHubRepositorySelection> selections);
+        Task ReplaceForUserAsync(Guid userId, Guid gitHubAccountId, IEnumerable<GitHubRepositorySelection> selections, string? ownerLoginScope = null);
     }
 }

@@ -45,11 +45,11 @@ public sealed class ExecutiveReportOrchestrator : IExecutiveReportOrchestrator
             throw new InvalidOperationException("Período inválido: 'from' deve ser menor ou igual a 'to'.");
         }
 
-        var commits = await _commitRepository.ListByUserAsync(request.UserId, request.RepositoryId, request.From, request.To);
-        var pullRequests = await _pullRequestRepository.ListByUserAsync(request.UserId, request.RepositoryId, request.From, request.To);
+        var commits = await _commitRepository.ListByUserAsync(request.UserId, request.RepositoryId, request.OrganizationLogin, request.From, request.To);
+        var pullRequests = await _pullRequestRepository.ListByUserAsync(request.UserId, request.RepositoryId, request.OrganizationLogin, request.From, request.To);
         var selectedRepositories = await _selectionRepository.GetByUserIdAsync(request.UserId);
 
-        var repositories = BuildRepositoryScope(request.RepositoryId, selectedRepositories, commits, pullRequests);
+        var repositories = BuildRepositoryScope(request.RepositoryId, request.OrganizationLogin, selectedRepositories, commits, pullRequests);
         var evidence = BuildEvidence(commits, pullRequests);
         var metrics = BuildMetrics(commits, pullRequests, repositories.Count);
         var developerScope = request.UserId.ToString();
@@ -152,6 +152,7 @@ public sealed class ExecutiveReportOrchestrator : IExecutiveReportOrchestrator
 
     private static IReadOnlyCollection<string> BuildRepositoryScope(
         long? repositoryId,
+        string? organizationLogin,
         IReadOnlyCollection<GitHubRepositorySelection> selectedRepositories,
         IReadOnlyCollection<GitHubCommit> commits,
         IReadOnlyCollection<GitHubPullRequest> pullRequests)
@@ -176,6 +177,12 @@ public sealed class ExecutiveReportOrchestrator : IExecutiveReportOrchestrator
         var fromSelection = repositoryId.HasValue
             ? selectedRepositories.Where(repo => repo.RepositoryId == repositoryId.Value).Select(repo => repo.FullName)
             : selectedRepositories.Select(repo => repo.FullName);
+
+        if (!string.IsNullOrWhiteSpace(organizationLogin))
+        {
+            fromContributions = fromContributions.Where(name => name.StartsWith(organizationLogin + "/", StringComparison.OrdinalIgnoreCase));
+            fromSelection = fromSelection.Where(name => name.StartsWith(organizationLogin + "/", StringComparison.OrdinalIgnoreCase));
+        }
 
         return fromContributions
             .Concat(fromSelection)
@@ -309,6 +316,7 @@ Responda SOMENTE em JSON válido:
         sb.AppendLine("ESCOPO");
         sb.AppendLine($"- DeveloperScope: {developerScope}");
         sb.AppendLine($"- RepositoryId filtro: {(request.RepositoryId.HasValue ? request.RepositoryId.Value : "todos")}");
+        sb.AppendLine($"- Organização filtro: {(string.IsNullOrWhiteSpace(request.OrganizationLogin) ? "todas" : request.OrganizationLogin)}");
         sb.AppendLine($"- Repositórios analisados: {(repositories.Count == 0 ? "nenhum" : string.Join(", ", repositories))}");
         sb.AppendLine($"- Período início: {(request.From.HasValue ? request.From.Value.ToString("O") : "não informado")}");
         sb.AppendLine($"- Período fim: {(request.To.HasValue ? request.To.Value.ToString("O") : "não informado")}");

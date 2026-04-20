@@ -5,6 +5,7 @@ export const getContributions = async (filters: ContributionsFilters = {}): Prom
   const response = await api.get<PagedContributions>('github/contributions', {
     params: {
       repositoryId: filters.repositoryId,
+      organizationLogin: filters.organizationLogin,
       from: filters.from,
       to: filters.to,
       page: filters.page,

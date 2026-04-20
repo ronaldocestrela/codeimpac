@@ -26,7 +26,7 @@ public class ReportRepository : IReportRepository
             .FirstOrDefaultAsync(r => r.UserId == userId && r.Id == reportId);
     }
 
-    public async Task<IReadOnlyCollection<Report>> ListByUserAsync(Guid userId, long? repositoryId, DateTime? from, DateTime? to)
+    public async Task<IReadOnlyCollection<Report>> ListByUserAsync(Guid userId, long? repositoryId, string? organizationLogin, DateTime? from, DateTime? to)
     {
         var query = _dbContext.Set<Report>()
             .AsNoTracking()
@@ -47,8 +47,31 @@ public class ReportRepository : IReportRepository
             query = query.Where(r => !r.FromDate.HasValue || r.FromDate.Value <= to.Value);
         }
 
-        return await query
+        var reports = await query
             .OrderByDescending(r => r.GeneratedAt)
             .ToListAsync();
+
+        if (string.IsNullOrWhiteSpace(organizationLogin))
+        {
+            return reports;
+        }
+
+        var orgPrefix = organizationLogin + "/";
+        return reports
+            .Where(report => ReportContainsOrganization(report, orgPrefix))
+            .ToList();
+    }
+
+    private static bool ReportContainsOrganization(Report report, string orgPrefix)
+    {
+        try
+        {
+            var repositories = System.Text.Json.JsonSerializer.Deserialize<List<string>>(report.RepositoriesJson);
+            return repositories?.Any(repo => repo.StartsWith(orgPrefix, StringComparison.OrdinalIgnoreCase)) == true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 }

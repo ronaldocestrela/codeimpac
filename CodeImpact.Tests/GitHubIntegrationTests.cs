@@ -102,12 +102,12 @@ public class GitHubIntegrationTests
         {
             GetUserRepositoriesAsyncDelegate = _ => Task.FromResult<IEnumerable<GitHubRepositoryDto>>(new[]
             {
-                new GitHubRepositoryDto(1, "repo", "octocat/repo", false)
+                new GitHubRepositoryDto(1, "repo", "octocat/repo", false, "octocat", "User")
             })
         };
 
         var handler = new GetGitHubRepositoriesQueryHandler(service, repository);
-        var result = await handler.Handle(new GetGitHubRepositoriesQuery(userId), CancellationToken.None);
+        var result = await handler.Handle(new GetGitHubRepositoriesQuery(userId, null), CancellationToken.None);
 
         Assert.Collection(result,
             repo =>
@@ -183,7 +183,7 @@ public class GitHubIntegrationTests
         var selectionRepository = new StubGitHubRepositorySelectionRepository
         {
             GetByUserAndRepositoryIdAsyncDelegate = (_, repositoryId) => Task.FromResult<GitHubRepositorySelection?>(
-                new GitHubRepositorySelection(userId, account.Id, repositoryId, "repo", "octocat/repo", false))
+                new GitHubRepositorySelection(userId, account.Id, repositoryId, "repo", "octocat/repo", false, "octocat", "User"))
         };
 
         var service = new StubGitHubService
@@ -266,7 +266,7 @@ public class GitHubIntegrationTests
         var selectionRepository = new StubGitHubRepositorySelectionRepository
         {
             GetByUserAndRepositoryIdAsyncDelegate = (_, repositoryId) => Task.FromResult<GitHubRepositorySelection?>(
-                new GitHubRepositorySelection(userId, account.Id, repositoryId, "repo", "octocat/repo", false))
+                new GitHubRepositorySelection(userId, account.Id, repositoryId, "repo", "octocat/repo", false, "octocat", "User"))
         };
 
         var service = new StubGitHubService
@@ -307,7 +307,7 @@ public class GitHubIntegrationTests
 
         var commitRepository = new StubGitHubCommitRepository
         {
-            ListByUserAsyncDelegate = (_, _, _, _) => Task.FromResult<IReadOnlyCollection<GitHubCommit>>(new[]
+            ListByUserAsyncDelegate = (_, _, _, _, _) => Task.FromResult<IReadOnlyCollection<GitHubCommit>>(new[]
             {
                 new GitHubCommit(userId, Guid.NewGuid(), 100, "octocat/repo", "abc123", "feat: add dashboard", "Octo Cat", "octo@example.com", olderDate, "https://github.com/octocat/repo/commit/abc123")
             })
@@ -315,7 +315,7 @@ public class GitHubIntegrationTests
 
         var pullRequestRepository = new StubGitHubPullRequestRepository
         {
-            ListByUserAsyncDelegate = (_, _, _, _) => Task.FromResult<IReadOnlyCollection<GitHubPullRequest>>(new[]
+            ListByUserAsyncDelegate = (_, _, _, _, _) => Task.FromResult<IReadOnlyCollection<GitHubPullRequest>>(new[]
             {
                 new GitHubPullRequest(userId, Guid.NewGuid(), 100, "octocat/repo", 500, 42, "Improve dashboard", "open", "octocat", true, newerDate, null, null, "https://github.com/octocat/repo/pull/42")
             })
@@ -323,7 +323,7 @@ public class GitHubIntegrationTests
 
         var handler = new GetContributionsQueryHandler(commitRepository, pullRequestRepository);
 
-        var result = await handler.Handle(new GetContributionsQuery(userId, null, null, null, 1, 20), CancellationToken.None);
+        var result = await handler.Handle(new GetContributionsQuery(userId, null, null, null, null, 1, 20), CancellationToken.None);
 
         Assert.Equal(2, result.TotalCount);
         Assert.Equal(1, result.Page);
@@ -341,7 +341,7 @@ public class GitHubIntegrationTests
 
         var commitRepository = new StubGitHubCommitRepository
         {
-            ListByUserAsyncDelegate = (_, _, _, _) => Task.FromResult<IReadOnlyCollection<GitHubCommit>>(new[]
+            ListByUserAsyncDelegate = (_, _, _, _, _) => Task.FromResult<IReadOnlyCollection<GitHubCommit>>(new[]
             {
                 new GitHubCommit(userId, Guid.NewGuid(), 100, "octocat/repo", "sha-1", "commit-1", "Octo", "octo@example.com", now.AddMinutes(-3), "https://github.com/octocat/repo/commit/sha-1"),
                 new GitHubCommit(userId, Guid.NewGuid(), 100, "octocat/repo", "sha-2", "commit-2", "Octo", "octo@example.com", now.AddMinutes(-2), "https://github.com/octocat/repo/commit/sha-2"),
@@ -351,7 +351,7 @@ public class GitHubIntegrationTests
 
         var handler = new GetContributionsQueryHandler(commitRepository, new StubGitHubPullRequestRepository());
 
-        var result = await handler.Handle(new GetContributionsQuery(userId, null, null, null, 2, 2), CancellationToken.None);
+        var result = await handler.Handle(new GetContributionsQuery(userId, null, null, null, null, 2, 2), CancellationToken.None);
 
         Assert.Equal(3, result.TotalCount);
         Assert.Equal(2, result.TotalPages);
@@ -370,7 +370,7 @@ public class GitHubIntegrationTests
 
         await Assert.ThrowsAsync<InvalidOperationException>(async () =>
             await handler.Handle(
-                new GetContributionsQuery(userId, null, DateTime.UtcNow, DateTime.UtcNow.AddDays(-1), 1, 20),
+                new GetContributionsQuery(userId, null, null, DateTime.UtcNow, DateTime.UtcNow.AddDays(-1), 1, 20),
                 CancellationToken.None));
     }
 
@@ -445,9 +445,10 @@ public class GitHubIntegrationTests
                 userId,
                 new[]
                 {
-                    new SelectedGitHubRepositoryDto(1, "repo-1", "octocat/repo-1", false),
-                    new SelectedGitHubRepositoryDto(2, "repo-2", "octocat/repo-2", true)
-                }),
+                    new SelectedGitHubRepositoryDto(1, "repo-1", "octocat/repo-1", false, "octocat", "User"),
+                    new SelectedGitHubRepositoryDto(2, "repo-2", "octocat/repo-2", true, "octocat", "User")
+                },
+                null),
             CancellationToken.None);
 
         Assert.Equal(userId, selectionRepository.LastUserId);
@@ -465,7 +466,7 @@ public class GitHubIntegrationTests
         {
             GetByUserIdAsyncDelegate = _ => Task.FromResult<IReadOnlyCollection<GitHubRepositorySelection>>(new[]
             {
-                new GitHubRepositorySelection(userId, Guid.NewGuid(), 100, "repo", "octocat/repo", false)
+                new GitHubRepositorySelection(userId, Guid.NewGuid(), 100, "repo", "octocat/repo", false, "octocat", "User")
             })
         };
 
@@ -569,7 +570,8 @@ public class GitHubIntegrationTests
                             id = 100L,
                             name = "repo",
                             full_name = "octocat/repo",
-                            @private = false
+                            @private = false,
+                            owner = new { login = "octocat", type = "User" }
                         }
                     })
                 };
@@ -589,6 +591,7 @@ public class GitHubIntegrationTests
                 Assert.Equal(100, repo.Id);
                 Assert.Equal("octocat/repo", repo.FullName);
                 Assert.False(repo.Private);
+                Assert.Equal("octocat", repo.OwnerLogin);
             });
     }
 
@@ -625,6 +628,7 @@ public class GitHubIntegrationTests
     {
         public Func<string, Task<GitHubCodeExchangeResultDto>> ExchangeCodeAsyncDelegate { get; set; } = _ => throw new InvalidOperationException();
         public Func<string, Task<IEnumerable<GitHubRepositoryDto>>> GetUserRepositoriesAsyncDelegate { get; set; } = _ => Task.FromResult<IEnumerable<GitHubRepositoryDto>>(Array.Empty<GitHubRepositoryDto>());
+        public Func<string, Task<IEnumerable<GitHubOrganizationDto>>> GetUserOrganizationsAsyncDelegate { get; set; } = _ => Task.FromResult<IEnumerable<GitHubOrganizationDto>>(Array.Empty<GitHubOrganizationDto>());
         public Func<string, string, Task<IEnumerable<GitHubPullRequestDto>>> GetPullRequestsAsyncDelegate { get; set; } = (_, _) => Task.FromResult<IEnumerable<GitHubPullRequestDto>>(Array.Empty<GitHubPullRequestDto>());
         public Func<string, string, Task<IEnumerable<GitHubCommitDto>>> GetCommitsAsyncDelegate { get; set; } = (_, _) => Task.FromResult<IEnumerable<GitHubCommitDto>>(Array.Empty<GitHubCommitDto>());
         public Func<string, string, int, Task<IEnumerable<GitHubPullRequestReviewDto>>> GetPullRequestReviewsAsyncDelegate { get; set; } = (_, _, _) => Task.FromResult<IEnumerable<GitHubPullRequestReviewDto>>(Array.Empty<GitHubPullRequestReviewDto>());
@@ -632,6 +636,7 @@ public class GitHubIntegrationTests
         public Task<string> GetAuthorizationUrlAsync() => Task.FromResult(string.Empty);
         public Task<GitHubCodeExchangeResultDto> ExchangeCodeAsync(string code) => ExchangeCodeAsyncDelegate(code);
         public Task<IEnumerable<GitHubRepositoryDto>> GetUserRepositoriesAsync(string encryptedAccessToken) => GetUserRepositoriesAsyncDelegate(encryptedAccessToken);
+        public Task<IEnumerable<GitHubOrganizationDto>> GetUserOrganizationsAsync(string encryptedAccessToken) => GetUserOrganizationsAsyncDelegate(encryptedAccessToken);
         public Task<IEnumerable<GitHubPullRequestDto>> GetPullRequestsAsync(string encryptedAccessToken, string repositoryFullName)
             => GetPullRequestsAsyncDelegate(encryptedAccessToken, repositoryFullName);
         public Task<IEnumerable<GitHubCommitDto>> GetCommitsAsync(string encryptedAccessToken, string repositoryFullName)
@@ -643,16 +648,16 @@ public class GitHubIntegrationTests
     private sealed class StubGitHubCommitRepository : IGitHubCommitRepository
     {
         public List<GitHubCommit> AddedCommits { get; } = new();
-        public Func<Guid, long?, DateTime?, DateTime?, Task<IReadOnlyCollection<GitHubCommit>>> ListByUserAsyncDelegate { get; set; }
-            = (_, _, _, _) => Task.FromResult<IReadOnlyCollection<GitHubCommit>>(Array.Empty<GitHubCommit>());
+        public Func<Guid, long?, string?, DateTime?, DateTime?, Task<IReadOnlyCollection<GitHubCommit>>> ListByUserAsyncDelegate { get; set; }
+            = (_, _, _, _, _) => Task.FromResult<IReadOnlyCollection<GitHubCommit>>(Array.Empty<GitHubCommit>());
         public Func<Guid, Guid, Task<GitHubCommit?>> GetByIdAsyncDelegate { get; set; }
             = (_, _) => Task.FromResult<GitHubCommit?>(null);
 
         public Task<GitHubCommit?> GetByUserRepositoryAndShaAsync(Guid userId, long repositoryId, string commitSha)
             => Task.FromResult<GitHubCommit?>(null);
 
-        public Task<IReadOnlyCollection<GitHubCommit>> ListByUserAsync(Guid userId, long? repositoryId, DateTime? from, DateTime? to)
-            => ListByUserAsyncDelegate(userId, repositoryId, from, to);
+        public Task<IReadOnlyCollection<GitHubCommit>> ListByUserAsync(Guid userId, long? repositoryId, string? organizationLogin, DateTime? from, DateTime? to)
+            => ListByUserAsyncDelegate(userId, repositoryId, organizationLogin, from, to);
 
         public Task<GitHubCommit?> GetByIdAsync(Guid userId, Guid commitId)
             => GetByIdAsyncDelegate(userId, commitId);
@@ -669,16 +674,16 @@ public class GitHubIntegrationTests
     private sealed class StubGitHubPullRequestRepository : IGitHubPullRequestRepository
     {
         public List<GitHubPullRequest> AddedPullRequests { get; } = new();
-        public Func<Guid, long?, DateTime?, DateTime?, Task<IReadOnlyCollection<GitHubPullRequest>>> ListByUserAsyncDelegate { get; set; }
-            = (_, _, _, _) => Task.FromResult<IReadOnlyCollection<GitHubPullRequest>>(Array.Empty<GitHubPullRequest>());
+        public Func<Guid, long?, string?, DateTime?, DateTime?, Task<IReadOnlyCollection<GitHubPullRequest>>> ListByUserAsyncDelegate { get; set; }
+            = (_, _, _, _, _) => Task.FromResult<IReadOnlyCollection<GitHubPullRequest>>(Array.Empty<GitHubPullRequest>());
         public Func<Guid, Guid, Task<GitHubPullRequest?>> GetByIdAsyncDelegate { get; set; }
             = (_, _) => Task.FromResult<GitHubPullRequest?>(null);
 
         public Task<GitHubPullRequest?> GetByUserRepositoryAndGitHubPullRequestIdAsync(Guid userId, long repositoryId, long gitHubPullRequestId)
             => Task.FromResult<GitHubPullRequest?>(null);
 
-        public Task<IReadOnlyCollection<GitHubPullRequest>> ListByUserAsync(Guid userId, long? repositoryId, DateTime? from, DateTime? to)
-            => ListByUserAsyncDelegate(userId, repositoryId, from, to);
+        public Task<IReadOnlyCollection<GitHubPullRequest>> ListByUserAsync(Guid userId, long? repositoryId, string? organizationLogin, DateTime? from, DateTime? to)
+            => ListByUserAsyncDelegate(userId, repositoryId, organizationLogin, from, to);
 
         public Task<GitHubPullRequest?> GetByIdAsync(Guid userId, Guid pullRequestId)
             => GetByIdAsyncDelegate(userId, pullRequestId);
@@ -730,7 +735,7 @@ public class GitHubIntegrationTests
         public Task<GitHubRepositorySelection?> GetByUserAndRepositoryIdAsync(Guid userId, long repositoryId)
             => GetByUserAndRepositoryIdAsyncDelegate(userId, repositoryId);
 
-        public Task ReplaceForUserAsync(Guid userId, Guid gitHubAccountId, IEnumerable<GitHubRepositorySelection> selections)
+        public Task ReplaceForUserAsync(Guid userId, Guid gitHubAccountId, IEnumerable<GitHubRepositorySelection> selections, string? ownerLoginScope = null)
         {
             LastUserId = userId;
             LastGitHubAccountId = gitHubAccountId;

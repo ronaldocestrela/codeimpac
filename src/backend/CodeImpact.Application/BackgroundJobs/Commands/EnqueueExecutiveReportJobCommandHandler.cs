@@ -21,7 +21,7 @@ public sealed class EnqueueExecutiveReportJobCommandHandler : IRequestHandler<En
 
     public async Task<BackgroundJobEnqueueDto> Handle(EnqueueExecutiveReportJobCommand request, CancellationToken cancellationToken)
     {
-        var payload = new ExecutiveReportJobRequest(request.RepositoryId, request.From, request.To);
+        var payload = new ExecutiveReportJobRequest(request.RepositoryId, request.OrganizationLogin, request.From, request.To);
         var execution = new BackgroundJobExecution(
             request.UserId,
             BackgroundJobExecutionType.ExecutiveReport,

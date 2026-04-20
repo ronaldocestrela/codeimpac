@@ -46,6 +46,7 @@ public class GitHubContributionRepositoryDateFilterTests
         var result = await repository.ListByUserAsync(
             userId,
             repositoryId: 100,
+            organizationLogin: null,
             from: null,
             to: new DateTime(2026, 4, 10, 0, 0, 0, DateTimeKind.Utc));
 
@@ -101,6 +102,7 @@ public class GitHubContributionRepositoryDateFilterTests
         var result = await repository.ListByUserAsync(
             userId,
             repositoryId: 100,
+            organizationLogin: null,
             from: null,
             to: new DateTime(2026, 4, 10, 0, 0, 0, DateTimeKind.Utc));
 

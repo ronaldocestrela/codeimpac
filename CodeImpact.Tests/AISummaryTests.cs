@@ -187,7 +187,7 @@ public class AISummaryTests
         public Task<GitHubCommit?> GetByUserRepositoryAndShaAsync(Guid userId, long repositoryId, string commitSha)
             => Task.FromResult<GitHubCommit?>(null);
 
-        public Task<IReadOnlyCollection<GitHubCommit>> ListByUserAsync(Guid userId, long? repositoryId, DateTime? from, DateTime? to)
+        public Task<IReadOnlyCollection<GitHubCommit>> ListByUserAsync(Guid userId, long? repositoryId, string? organizationLogin, DateTime? from, DateTime? to)
             => Task.FromResult(_items);
 
         public Task<GitHubCommit?> GetByIdAsync(Guid userId, Guid commitId)
@@ -210,7 +210,7 @@ public class AISummaryTests
         public Task<GitHubPullRequest?> GetByUserRepositoryAndGitHubPullRequestIdAsync(Guid userId, long repositoryId, long gitHubPullRequestId)
             => Task.FromResult<GitHubPullRequest?>(null);
 
-        public Task<IReadOnlyCollection<GitHubPullRequest>> ListByUserAsync(Guid userId, long? repositoryId, DateTime? from, DateTime? to)
+        public Task<IReadOnlyCollection<GitHubPullRequest>> ListByUserAsync(Guid userId, long? repositoryId, string? organizationLogin, DateTime? from, DateTime? to)
             => Task.FromResult(_items);
 
         public Task<GitHubPullRequest?> GetByIdAsync(Guid userId, Guid pullRequestId)

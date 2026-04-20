@@ -5,5 +5,8 @@ using MediatR;
 
 namespace CodeImpact.Application.GitHub.Commands
 {
-    public sealed record UpdateSelectedGitHubRepositoriesCommand(Guid UserId, IReadOnlyCollection<SelectedGitHubRepositoryDto> Repositories) : IRequest;
+    public sealed record UpdateSelectedGitHubRepositoriesCommand(
+        Guid UserId,
+        IReadOnlyCollection<SelectedGitHubRepositoryDto> Repositories,
+        string? OrganizationLogin) : IRequest;
 }

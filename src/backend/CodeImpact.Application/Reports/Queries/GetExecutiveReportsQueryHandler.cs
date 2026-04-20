@@ -15,7 +15,7 @@ public sealed class GetExecutiveReportsQueryHandler : IRequestHandler<GetExecuti
 
     public async Task<IReadOnlyCollection<ExecutiveReportListItemDto>> Handle(GetExecutiveReportsQuery request, CancellationToken cancellationToken)
     {
-        var reports = await _reportRepository.ListByUserAsync(request.UserId, request.RepositoryId, request.From, request.To);
+        var reports = await _reportRepository.ListByUserAsync(request.UserId, request.RepositoryId, request.OrganizationLogin, request.From, request.To);
 
         return reports
             .Select(report => new ExecutiveReportListItemDto(

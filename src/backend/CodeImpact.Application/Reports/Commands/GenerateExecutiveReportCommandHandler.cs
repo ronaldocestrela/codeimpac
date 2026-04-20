@@ -16,7 +16,7 @@ public sealed class GenerateExecutiveReportCommandHandler : IRequestHandler<Gene
     public Task<ExecutiveReportDto> Handle(GenerateExecutiveReportCommand request, CancellationToken cancellationToken)
     {
         return _orchestrator.GenerateAndPersistAsync(
-            new ExecutiveReportRequest(request.UserId, request.RepositoryId, request.From, request.To),
+            new ExecutiveReportRequest(request.UserId, request.RepositoryId, request.OrganizationLogin, request.From, request.To),
             cancellationToken);
     }
 }

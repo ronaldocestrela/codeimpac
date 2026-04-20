@@ -10,5 +10,6 @@ public interface IExecutiveReportOrchestrator
 public sealed record ExecutiveReportRequest(
     Guid UserId,
     long? RepositoryId,
+    string? OrganizationLogin,
     DateTime? From,
     DateTime? To);

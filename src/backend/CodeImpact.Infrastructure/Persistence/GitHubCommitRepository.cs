@@ -19,7 +19,7 @@ public class GitHubCommitRepository : IGitHubCommitRepository
             c => c.UserId == userId && c.RepositoryId == repositoryId && c.CommitSha == commitSha);
     }
 
-    public async Task<IReadOnlyCollection<GitHubCommit>> ListByUserAsync(Guid userId, long? repositoryId, DateTime? from, DateTime? to)
+    public async Task<IReadOnlyCollection<GitHubCommit>> ListByUserAsync(Guid userId, long? repositoryId, string? organizationLogin, DateTime? from, DateTime? to)
     {
         var query = _dbContext.GitHubCommits
             .AsNoTracking()
@@ -28,6 +28,11 @@ public class GitHubCommitRepository : IGitHubCommitRepository
         if (repositoryId.HasValue)
         {
             query = query.Where(c => c.RepositoryId == repositoryId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(organizationLogin))
+        {
+            query = query.Where(c => EF.Functions.Like(c.RepositoryFullName, organizationLogin + "/%"));
         }
 
         if (from.HasValue)

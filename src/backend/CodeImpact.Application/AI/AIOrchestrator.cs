@@ -35,8 +35,8 @@ public sealed class AIOrchestrator : IAIOrchestrator
             throw new InvalidOperationException("Período inválido: 'from' deve ser menor ou igual a 'to'.");
         }
 
-        var commits = await _commitRepository.ListByUserAsync(request.UserId, request.RepositoryId, request.From, request.To);
-        var pullRequests = await _pullRequestRepository.ListByUserAsync(request.UserId, request.RepositoryId, request.From, request.To);
+        var commits = await _commitRepository.ListByUserAsync(request.UserId, request.RepositoryId, null, request.From, request.To);
+        var pullRequests = await _pullRequestRepository.ListByUserAsync(request.UserId, request.RepositoryId, null, request.From, request.To);
 
         var approvedPullRequests = pullRequests
             .Where(pr => pr.IsApproved)
