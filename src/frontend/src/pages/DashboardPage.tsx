@@ -7,6 +7,7 @@ import { getMe } from '../services/auth'
 import { getContributions } from '../services/contributions'
 import { getExecutiveReports } from '../services/reports'
 import type { GitHubRepository } from '../types/github'
+import { buildDashboardMetrics } from '../utils/dashboardMetrics'
 
 function toDateInputValue(date: Date): string {
   return date.toISOString().split('T')[0]
@@ -56,6 +57,8 @@ export default function DashboardPage() {
     to: to || undefined
   }), [from, to])
 
+  const hasInvalidRange = Boolean(from && to && from > to)
+
   const githubStatusQuery = useQuery({
     queryKey: ['dashboard-github-status'],
     queryFn: async (): Promise<{ githubLinked: boolean, selectedRepositories: GitHubRepository[] }> => {
@@ -72,25 +75,15 @@ export default function DashboardPage() {
   const metricsQuery = useQuery({
     queryKey: ['dashboard-metrics', filters],
     queryFn: async () => {
-      const [contributions, reports] = await Promise.all([
+      const [contributionsResult, reportsResult] = await Promise.allSettled([
         getContributions(filters),
         getExecutiveReports(filters)
       ])
 
-      const pullRequests = contributions.filter(item => item.type === 'pull_request')
-      const commits = contributions.filter(item => item.type === 'commit')
-      const approvedPullRequests = pullRequests.filter(item => item.isApproved === true)
-
-      return {
-        totalContributions: contributions.length,
-        commitCount: commits.length,
-        pullRequestCount: pullRequests.length,
-        approvedPullRequestCount: approvedPullRequests.length,
-        reportsCount: reports.length,
-        latestReportAt: reports.length > 0 ? reports[0].generatedAt : null
-      }
+      return buildDashboardMetrics(contributionsResult, reportsResult)
     },
-    retry: false
+    retry: false,
+    enabled: !hasInvalidRange
   })
 
   const handleLogout = () => {
@@ -223,8 +216,22 @@ export default function DashboardPage() {
         {metricsQuery.isLoading && (
           <p className="mt-3 text-xs text-on-surface-variant">Calculando métricas do período...</p>
         )}
+        {hasInvalidRange && (
+          <p className="mt-3 text-xs text-tertiary">Período inválido: a data inicial deve ser menor ou igual à data final.</p>
+        )}
+        {!hasInvalidRange && metricsQuery.data?.contributionsUnavailable && (
+          <p className="mt-3 text-xs text-tertiary">Não foi possível carregar contribuições para o período informado.</p>
+        )}
+        {!hasInvalidRange && metricsQuery.data?.reportsUnavailable && (
+          <p className="mt-1 text-xs text-tertiary">Não foi possível carregar o histórico de relatórios para o período informado.</p>
+        )}
         {metricsQuery.isError && (
-          <p className="mt-3 text-xs text-tertiary">Não foi possível carregar métricas para o período informado.</p>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <p className="text-xs text-tertiary">Não foi possível carregar métricas para o período informado.</p>
+            <button type="button" className="btn-ghost text-xs py-0" onClick={() => void metricsQuery.refetch()}>
+              Tentar novamente
+            </button>
+          </div>
         )}
       </div>
 

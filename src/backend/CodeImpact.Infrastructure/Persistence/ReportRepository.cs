@@ -39,12 +39,12 @@ public class ReportRepository : IReportRepository
 
         if (from.HasValue)
         {
-            query = query.Where(r => r.GeneratedAt >= from.Value);
+            query = query.Where(r => !r.ToDate.HasValue || r.ToDate.Value >= from.Value);
         }
 
         if (to.HasValue)
         {
-            query = query.Where(r => r.GeneratedAt <= to.Value);
+            query = query.Where(r => !r.FromDate.HasValue || r.FromDate.Value <= to.Value);
         }
 
         return await query
