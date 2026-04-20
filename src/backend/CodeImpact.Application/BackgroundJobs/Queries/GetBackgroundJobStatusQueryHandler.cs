@@ -58,13 +58,21 @@ public sealed class GetBackgroundJobStatusQueryHandler : IRequestHandler<GetBack
         try
         {
             using var document = JsonDocument.Parse(resultJson);
-            if (!document.RootElement.TryGetProperty("reportId", out var reportIdElement))
+            if (!document.RootElement.TryGetProperty("reportId", out var reportIdElement)
+                && !document.RootElement.TryGetProperty("ReportId", out reportIdElement))
             {
                 return null;
             }
 
-            var reportIdString = reportIdElement.GetString();
-            return Guid.TryParse(reportIdString, out var reportId) ? reportId : null;
+            if (reportIdElement.ValueKind == JsonValueKind.String)
+            {
+                var reportIdString = reportIdElement.GetString();
+                return Guid.TryParse(reportIdString, out var reportId) ? reportId : null;
+            }
+
+            return reportIdElement.ValueKind == JsonValueKind.Null
+                ? null
+                : reportIdElement.GetGuid();
         }
         catch
         {

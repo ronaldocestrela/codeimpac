@@ -9,6 +9,11 @@ namespace CodeImpact.Application.BackgroundJobs;
 
 public sealed class BackgroundGenerationJobProcessor
 {
+    private static readonly JsonSerializerOptions CamelCaseJsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
+
     private readonly IBackgroundJobExecutionRepository _jobRepository;
     private readonly IAIOrchestrator _aiOrchestrator;
     private readonly IExecutiveReportOrchestrator _reportOrchestrator;
@@ -76,7 +81,7 @@ public sealed class BackgroundGenerationJobProcessor
             var report = await _reportOrchestrator.GenerateAndPersistAsync(
                 new ExecutiveReportRequest(execution.UserId, payload.RepositoryId, payload.From, payload.To));
 
-            execution.MarkSucceeded(JsonSerializer.Serialize(new ExecutiveReportJobResult(report.Id)));
+            execution.MarkSucceeded(JsonSerializer.Serialize(new ExecutiveReportJobResult(report.Id), CamelCaseJsonOptions));
             await _jobRepository.UpdateAsync(execution);
         }
         catch (Exception ex)

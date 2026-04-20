@@ -93,6 +93,10 @@ export default function ReportsPage() {
     queryFn: (): Promise<BackgroundJobStatusResponse> => getBackgroundJobStatus(pendingJobId ?? ''),
     enabled: Boolean(pendingJobId),
     refetchInterval: data => {
+      if (!data) {
+        return 2000
+      }
+
       const status = data?.status
       return status === 'Queued' || status === 'Processing' ? 2000 : false
     }
@@ -103,10 +107,15 @@ export default function ReportsPage() {
       return
     }
 
-    if (jobStatusQuery.data.status === 'Succeeded' && jobStatusQuery.data.reportId) {
-      setSelectedReportId(jobStatusQuery.data.reportId)
+    if (jobStatusQuery.data.status === 'Succeeded') {
+      if (jobStatusQuery.data.reportId) {
+        setSelectedReportId(jobStatusQuery.data.reportId)
+        setJobFeedback('Relatorio concluido com sucesso.')
+      } else {
+        setJobFeedback('Relatorio concluido, mas sem identificador para abrir automaticamente.')
+      }
+
       setPendingJobId(null)
-      setJobFeedback('Relatorio concluido com sucesso.')
       void reportsQuery.refetch()
       return
     }
@@ -115,7 +124,7 @@ export default function ReportsPage() {
       setPendingJobId(null)
       setJobFeedback(jobStatusQuery.data.errorMessage || 'Falha ao processar o relatorio em background.')
     }
-  }, [pendingJobId, jobStatusQuery.data, reportsQuery.refetch])
+  }, [pendingJobId, jobStatusQuery.data])
 
   const createMutation = useMutation({
     mutationFn: () => enqueueExecutiveReportGeneration(filters),
