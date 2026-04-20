@@ -122,10 +122,10 @@ public sealed class ExecutiveReportOrchestrator : IExecutiveReportOrchestrator
 
     public static ExecutiveReportDto MapToDto(Report report)
     {
-        var repositories = DeserializeOrDefault<List<string>>(report.RepositoriesJson) ?? new List<string>();
-        var highlights = DeserializeOrDefault<List<ExecutiveReportHighlightDto>>(report.HighlightsJson) ?? new List<ExecutiveReportHighlightDto>();
-        var risks = DeserializeOrDefault<List<ExecutiveReportRiskDto>>(report.RisksJson) ?? new List<ExecutiveReportRiskDto>();
-        var evidence = DeserializeOrDefault<List<ExecutiveReportEvidenceDto>>(report.EvidenceJson) ?? new List<ExecutiveReportEvidenceDto>();
+        var repositories = DeserializeRequired<List<string>>(report.RepositoriesJson, nameof(report.RepositoriesJson));
+        var highlights = DeserializeRequired<List<ExecutiveReportHighlightDto>>(report.HighlightsJson, nameof(report.HighlightsJson));
+        var risks = DeserializeRequired<List<ExecutiveReportRiskDto>>(report.RisksJson, nameof(report.RisksJson));
+        var evidence = DeserializeRequired<List<ExecutiveReportEvidenceDto>>(report.EvidenceJson, nameof(report.EvidenceJson));
 
         return new ExecutiveReportDto(
             report.Id,
@@ -340,6 +340,11 @@ Responda SOMENTE em JSON válido:
 
     private ParsedReportResponse ParseResponse(string rawResponse)
     {
+        if (string.IsNullOrWhiteSpace(rawResponse))
+        {
+            throw new InvalidOperationException("Resposta do LLM para relatório executivo está vazia.");
+        }
+
         try
         {
             using var document = JsonDocument.Parse(rawResponse);
@@ -380,8 +385,8 @@ Responda SOMENTE em JSON válido:
         }
         catch (JsonException ex)
         {
-            _logger.LogWarning(ex, "Resposta do LLM para relatório executivo não está em JSON válido. Será aplicado fallback textual.");
-            return new ParsedReportResponse(rawResponse.Trim(), Array.Empty<ParsedHighlight>(), Array.Empty<ParsedRisk>());
+            _logger.LogWarning(ex, "Resposta do LLM para relatório executivo não está em JSON válido.");
+            throw new InvalidOperationException("Resposta do LLM para relatório executivo não está em JSON válido.", ex);
         }
     }
 
@@ -400,15 +405,16 @@ Responda SOMENTE em JSON válido:
             .ToList();
     }
 
-    private static T? DeserializeOrDefault<T>(string json)
+    private static T DeserializeRequired<T>(string json, string fieldName)
     {
         try
         {
-            return JsonSerializer.Deserialize<T>(json, JsonOptions);
+            return JsonSerializer.Deserialize<T>(json, JsonOptions)
+                   ?? throw new InvalidOperationException($"Campo '{fieldName}' do relatório está vazio ou nulo.");
         }
-        catch (JsonException)
+        catch (JsonException ex)
         {
-            return default;
+            throw new InvalidOperationException($"Campo '{fieldName}' do relatório contém JSON inválido.", ex);
         }
     }
 

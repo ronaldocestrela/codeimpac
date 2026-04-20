@@ -1,4 +1,5 @@
 using CodeImpact.Domain.Common;
+using System.Text.Json;
 
 namespace CodeImpact.Domain.Entities;
 
@@ -43,6 +44,26 @@ public class Report : BaseEntity
         string evidenceJson,
         DateTime generatedAt)
     {
+        if (userId == Guid.Empty)
+        {
+            throw new InvalidOperationException("UserId do relatório é obrigatório.");
+        }
+
+        if (string.IsNullOrWhiteSpace(developerScope))
+        {
+            throw new InvalidOperationException("DeveloperScope do relatório é obrigatório.");
+        }
+
+        if (string.IsNullOrWhiteSpace(executiveSummary))
+        {
+            throw new InvalidOperationException("ExecutiveSummary do relatório é obrigatório.");
+        }
+
+        EnsureValidJsonArray(repositoriesJson, nameof(repositoriesJson));
+        EnsureValidJsonArray(highlightsJson, nameof(highlightsJson));
+        EnsureValidJsonArray(risksJson, nameof(risksJson));
+        EnsureValidJsonArray(evidenceJson, nameof(evidenceJson));
+
         UserId = userId;
         RepositoryId = repositoryId;
         FromDate = fromDate;
@@ -60,5 +81,26 @@ public class Report : BaseEntity
         RisksJson = risksJson;
         EvidenceJson = evidenceJson;
         GeneratedAt = generatedAt;
+    }
+
+    private static void EnsureValidJsonArray(string json, string fieldName)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            throw new InvalidOperationException($"Campo '{fieldName}' do relatório é obrigatório.");
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(json);
+            if (document.RootElement.ValueKind != JsonValueKind.Array)
+            {
+                throw new InvalidOperationException($"Campo '{fieldName}' do relatório deve ser um JSON array.");
+            }
+        }
+        catch (JsonException ex)
+        {
+            throw new InvalidOperationException($"Campo '{fieldName}' do relatório contém JSON inválido.", ex);
+        }
     }
 }

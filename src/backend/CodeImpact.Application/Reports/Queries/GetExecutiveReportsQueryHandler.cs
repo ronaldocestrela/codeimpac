@@ -26,21 +26,22 @@ public sealed class GetExecutiveReportsQueryHandler : IRequestHandler<GetExecuti
                 report.ToDate,
                 report.CommitCount,
                 report.PullRequestApprovedCount,
-                DeserializeRepositoriesCount(report.RepositoriesJson),
+                DeserializeRepositoriesCount(report),
                 BuildPreview(report.ExecutiveSummary)))
             .ToList();
     }
 
-    private static int DeserializeRepositoriesCount(string repositoriesJson)
+    private static int DeserializeRepositoriesCount(CodeImpact.Domain.Entities.Report report)
     {
         try
         {
-            var repositories = System.Text.Json.JsonSerializer.Deserialize<List<string>>(repositoriesJson);
-            return repositories?.Count ?? 0;
+            var repositories = System.Text.Json.JsonSerializer.Deserialize<List<string>>(report.RepositoriesJson)
+                ?? throw new InvalidOperationException("Lista de repositórios vazia na desserialização.");
+            return repositories.Count;
         }
-        catch (System.Text.Json.JsonException)
+        catch (System.Text.Json.JsonException ex)
         {
-            return 0;
+            throw new InvalidOperationException($"Campo RepositoriesJson contém JSON inválido para o relatório {report.Id}.", ex);
         }
     }
 

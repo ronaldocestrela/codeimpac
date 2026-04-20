@@ -490,7 +490,13 @@ namespace CodeImpact.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("UserId", "GeneratedAt");
 
-                    b.ToTable("Reports");
+                    b.ToTable("Reports", t =>
+                        {
+                            t.HasCheckConstraint("CK_Reports_EvidenceJson_IsJson", "ISJSON([EvidenceJson]) = 1");
+                            t.HasCheckConstraint("CK_Reports_HighlightsJson_IsJson", "ISJSON([HighlightsJson]) = 1");
+                            t.HasCheckConstraint("CK_Reports_RepositoriesJson_IsJson", "ISJSON([RepositoriesJson]) = 1");
+                            t.HasCheckConstraint("CK_Reports_RisksJson_IsJson", "ISJSON([RisksJson]) = 1");
+                        });
                 });
 
             modelBuilder.Entity("CodeImpact.Domain.Entities.UserOrganization", b =>

@@ -135,6 +135,64 @@ public class ReportGenerationTests
         Assert.True(item.ExecutiveSummaryPreview.Length <= 160);
     }
 
+    [Fact]
+    public async Task ExecutiveReportOrchestrator_GenerateAndPersistAsync_WithInvalidLlmJson_ThrowsAndDoesNotPersist()
+    {
+        var userId = Guid.NewGuid();
+        var reportRepository = new StubReportRepository();
+        var orchestrator = new ExecutiveReportOrchestrator(
+            new StubCommitRepository(Array.Empty<GitHubCommit>()),
+            new StubPullRequestRepository(Array.Empty<GitHubPullRequest>()),
+            new StubSelectionRepository(Array.Empty<GitHubRepositorySelection>()),
+            reportRepository,
+            new StubLLMService("resposta sem json valido"),
+            NullLogger<ExecutiveReportOrchestrator>.Instance);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            orchestrator.GenerateAndPersistAsync(new ExecutiveReportRequest(userId, null, null, null)));
+
+        Assert.Null(reportRepository.AddedReport);
+    }
+
+    [Fact]
+    public async Task GetExecutiveReportsQueryHandler_WithCorruptedRepositoriesJson_ThrowsInvalidOperationException()
+    {
+        var userId = Guid.NewGuid();
+        var now = DateTime.UtcNow;
+
+        var report = new Report(
+            userId,
+            null,
+            now.AddDays(-1),
+            now,
+            userId.ToString(),
+            "[]",
+            1,
+            0,
+            1,
+            0,
+            0,
+            null,
+            "Resumo",
+            "[]",
+            "[]",
+            "[]",
+            now);
+
+        var repositoriesProperty = typeof(Report).GetProperty(nameof(Report.RepositoriesJson));
+        repositoriesProperty!.SetValue(report, "[invalid-json");
+
+        var repository = new StubReportRepository
+        {
+            ListResult = new[] { report }
+        };
+
+        var handler = new GetExecutiveReportsQueryHandler(repository);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            handler.Handle(new GetExecutiveReportsQuery(userId, null, null, null), CancellationToken.None));
+    }
+
     private sealed class StubLLMService : ILLMService
     {
         private readonly string _response;

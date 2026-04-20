@@ -104,6 +104,13 @@ namespace CodeImpact.Infrastructure.Persistence
                 entity.Property(r => r.HighlightsJson).HasMaxLength(8000).IsRequired();
                 entity.Property(r => r.RisksJson).HasMaxLength(8000).IsRequired();
                 entity.Property(r => r.EvidenceJson).HasMaxLength(16000).IsRequired();
+                entity.ToTable(table =>
+                {
+                    table.HasCheckConstraint("CK_Reports_RepositoriesJson_IsJson", "ISJSON([RepositoriesJson]) = 1");
+                    table.HasCheckConstraint("CK_Reports_HighlightsJson_IsJson", "ISJSON([HighlightsJson]) = 1");
+                    table.HasCheckConstraint("CK_Reports_RisksJson_IsJson", "ISJSON([RisksJson]) = 1");
+                    table.HasCheckConstraint("CK_Reports_EvidenceJson_IsJson", "ISJSON([EvidenceJson]) = 1");
+                });
             });
         }
     }

@@ -146,6 +146,22 @@ public class AISummaryTests
         Assert.Equal("20", prompt.Evidence.ElementAt(2).ExternalReference);
     }
 
+    [Fact]
+    public async Task AIOrchestrator_GenerateContributionSummaryAsync_WithInvalidLlmJson_ThrowsInvalidOperationException()
+    {
+        var userId = Guid.NewGuid();
+
+        var orchestrator = new AIOrchestrator(
+            new StubCommitRepository(Array.Empty<GitHubCommit>()),
+            new StubPullRequestRepository(Array.Empty<GitHubPullRequest>()),
+            new ContributionPromptBuilder(),
+            new StubLLMService("resposta sem json valido"),
+            NullLogger<AIOrchestrator>.Instance);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            orchestrator.GenerateContributionSummaryAsync(new ContributionSummaryRequest(userId, null, null, null)));
+    }
+
     private sealed class StubLLMService : ILLMService
     {
         private readonly string _response;

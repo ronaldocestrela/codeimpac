@@ -89,6 +89,11 @@ public sealed class AIOrchestrator : IAIOrchestrator
 
     private ParsedLLMResponse ParseResponse(string rawResponse)
     {
+        if (string.IsNullOrWhiteSpace(rawResponse))
+        {
+            throw new InvalidOperationException("Resposta do LLM para resumo de contribuições está vazia.");
+        }
+
         try
         {
             using var document = JsonDocument.Parse(rawResponse);
@@ -126,8 +131,8 @@ public sealed class AIOrchestrator : IAIOrchestrator
         }
         catch (JsonException ex)
         {
-            _logger.LogWarning(ex, "Resposta do LLM não está em JSON válido. Será aplicado fallback textual.");
-            return new ParsedLLMResponse(rawResponse.Trim(), Array.Empty<ParsedHighlight>());
+            _logger.LogWarning(ex, "Resposta do LLM para resumo de contribuições não está em JSON válido.");
+            throw new InvalidOperationException("Resposta do LLM para resumo de contribuições não está em JSON válido.", ex);
         }
     }
 
