@@ -8,6 +8,11 @@ import RepositorySelectionPage from './pages/RepositorySelectionPage'
 import ContributionsPage from './pages/ContributionsPage'
 import ContributionDetailPage from './pages/ContributionDetailPage'
 import ReportsPage from './pages/ReportsPage'
+import AdminUsersPage from './pages/AdminUsersPage'
+import AdminUserDetailPage from './pages/AdminUserDetailPage'
+import AdminJobsPage from './pages/AdminJobsPage'
+import AdminAuditPage from './pages/AdminAuditPage'
+import AdminSubscriptionsPage from './pages/AdminSubscriptionsPage'
 import ProtectedRoute from './routes/ProtectedRoute'
 import { useAuthStore } from './store/authStore'
 import { getMe, refreshToken as refreshSession } from './services/auth'
@@ -36,7 +41,9 @@ export default function App() {
   const setAuthTokens = useAuthStore(state => state.setAuthTokens)
   const setUser = useAuthStore(state => state.setUser)
   const logout = useAuthStore(state => state.logout)
+  const user = useAuthStore(state => state.user)
   const [initializing, setInitializing] = useState(true)
+  const isAdmin = (user?.roles ?? []).some(role => role === 'Owner' || role === 'Admin')
 
   useEffect(() => {
     if (!accessToken && refreshToken) {
@@ -74,6 +81,7 @@ export default function App() {
                 <Link to="/dashboard" className="text-on-surface-variant hover:text-on-surface transition-colors">Dashboard</Link>
                 <Link to="/contributions" className="text-on-surface-variant hover:text-on-surface transition-colors">Contribuições</Link>
                 <Link to="/reports" className="text-on-surface-variant hover:text-on-surface transition-colors">Relatórios</Link>
+                {isAdmin && <Link to="/admin/users" className="text-on-surface-variant hover:text-on-surface transition-colors">Backoffice</Link>}
               </>
             ) : (
               <>
@@ -95,6 +103,11 @@ export default function App() {
           <Route path="/contributions" element={<ProtectedRoute><ContributionsPage /></ProtectedRoute>} />
           <Route path="/contributions/:type/:id" element={<ProtectedRoute><ContributionDetailPage /></ProtectedRoute>} />
           <Route path="/reports" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
+          <Route path="/admin/users" element={<ProtectedRoute allowedRoles={['Owner', 'Admin']}><AdminUsersPage /></ProtectedRoute>} />
+          <Route path="/admin/users/:id" element={<ProtectedRoute allowedRoles={['Owner', 'Admin']}><AdminUserDetailPage /></ProtectedRoute>} />
+          <Route path="/admin/jobs" element={<ProtectedRoute allowedRoles={['Owner', 'Admin']}><AdminJobsPage /></ProtectedRoute>} />
+          <Route path="/admin/subscriptions" element={<ProtectedRoute allowedRoles={['Owner', 'Admin']}><AdminSubscriptionsPage /></ProtectedRoute>} />
+          <Route path="/admin/audit" element={<ProtectedRoute allowedRoles={['Owner', 'Admin']}><AdminAuditPage /></ProtectedRoute>} />
         </Routes>
       </main>
     </div>

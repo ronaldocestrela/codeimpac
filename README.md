@@ -24,6 +24,13 @@ CodeImpact is a SaaS platform for GitHub contribution analysis and AI-generated 
 - Phase 4: Contribution list/detail APIs and evidence mapping are available.
 - Phase 5: AI summary orchestration is implemented with deterministic prompt building and evidence traceability.
 - Phase 6: Executive report generation and persistence are implemented end-to-end (API + frontend).
+- Phase 7: Dashboard, contributions page, reports page, filtering, and export UI are implemented.
+- Phase 8: Hangfire background jobs are implemented for async summary/report processing with task polling.
+- Phase 9: Report export formats (`markdown`, `pdf`, `docx`) are implemented end-to-end.
+
+## Next Priorities
+- Backoffice admin panel for SaaS operations (user/subscription/job management, support actions, auditability).
+- Billing and subscription implementation (plans, checkout, webhook lifecycle, limits enforcement, billing portal).
 
 ## What is implemented
 ### Backend
@@ -74,13 +81,19 @@ CodeImpact is a SaaS platform for GitHub contribution analysis and AI-generated 
 - More comprehensive frontend integration tests and e2e coverage
 
 ### Backend / Future Phases
-- GitHub OAuth integration (started)
-- Repository sync and PR fetching (started, manual sync placeholder implemented)
-- Contribution storage and listing
-- AI integration via `IAIOrchestrator` and prompt generation
-- Hangfire background jobs for long-running processing
-- Export features (Markdown, PDF, DOCX)
-- Production hardening, Docker, CI/CD, logging and monitoring
+- Complete contribution ingestion parity for commits and PR reviews with robust persistence rules
+- Backoffice APIs and admin workflows:
+  - role/permission management
+  - user account and subscription administration
+  - job operations and support tooling
+  - admin action audit logs
+- Billing/subscription module:
+  - per-user plans, entitlements, and usage limits
+  - payment provider integration (checkout + customer portal)
+  - webhook ingestion with idempotency and retries
+  - invoice and payment event persistence
+  - subscription lifecycle and dunning handling
+- Production hardening: Docker, CI/CD, centralized logging, monitoring, security controls, and billing observability
 
 ## Getting Started
 ### Backend
@@ -128,3 +141,4 @@ npm test
 - JWT should be stored in memory with `localStorage` fallback for the frontend auth flow.
 - Business logic should remain outside controllers and use DTOs for API communication.
 - LLM integration must be abstracted and never called directly from controllers.
+- Backoffice and billing execution guide is documented in `docs/BACKOFFICE_BILLING_PLAN.md`.

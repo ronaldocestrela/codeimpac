@@ -1,4 +1,5 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using CodeImpact.Infrastructure.Services;
 using CodeImpact.Infrastructure.Settings;
 using Microsoft.Extensions.Options;
@@ -38,6 +39,21 @@ public class TokenServiceTests
         Assert.Equal("https://localhost:5262", jwt.Audiences.Single());
         Assert.Contains(jwt.Claims, c => c.Type == JwtRegisteredClaimNames.Email && c.Value == "user@example.com");
         Assert.Contains(jwt.Claims, c => c.Type == JwtRegisteredClaimNames.Sub);
+    }
+
+    [Fact]
+    public async Task CreateAccessTokenAsync_WithRoles_AddsRoleClaims()
+    {
+        var token = await _tokenService.CreateAccessTokenAsync(
+            Guid.NewGuid(),
+            "admin@example.com",
+            new[] { "Admin", "Viewer" });
+
+        var handler = new JwtSecurityTokenHandler();
+        var jwt = handler.ReadJwtToken(token);
+
+        Assert.Contains(jwt.Claims, c => c.Type == ClaimTypes.Role && c.Value == "Admin");
+        Assert.Contains(jwt.Claims, c => c.Type == ClaimTypes.Role && c.Value == "Viewer");
     }
 
     [Fact]

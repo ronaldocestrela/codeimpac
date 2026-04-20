@@ -1,6 +1,7 @@
 using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using CodeImpact.Application.Authentication.Dto;
 using CodeImpact.Infrastructure.Identity;
@@ -11,6 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using CodeImpact.Application.Common.Interfaces;
+using CodeImpact.Domain.Common;
 using CodeImpact.Domain.Entities;
 
 namespace CodeImpact.WebApi.Controllers
@@ -61,7 +63,19 @@ namespace CodeImpact.WebApi.Controllers
                 return BadRequest(result.Errors.Select(e => e.Description));
             }
 
-            var accessToken = await _tokenService.CreateAccessTokenAsync(user.Id, user.Email ?? string.Empty, Array.Empty<string>());
+            var addToRoleResult = await _userManager.AddToRoleAsync(user, ApplicationRoles.Viewer);
+            if (!addToRoleResult.Succeeded)
+            {
+                _logger.LogWarning(
+                    "Could not assign default role {Role} to user {UserId}. Errors: {Errors}",
+                    ApplicationRoles.Viewer,
+                    user.Id,
+                    string.Join(", ", addToRoleResult.Errors.Select(error => error.Description)));
+            }
+
+            var roles = await _userManager.GetRolesAsync(user);
+
+            var accessToken = await _tokenService.CreateAccessTokenAsync(user.Id, user.Email ?? string.Empty, roles);
             var refreshToken = await _tokenService.CreateRefreshTokenAsync();
 
             var refreshTokenEntity = new RefreshToken(user.Id, refreshToken, DateTime.UtcNow.AddDays(30));
@@ -86,7 +100,8 @@ namespace CodeImpact.WebApi.Controllers
                 return Unauthorized();
             }
 
-            var accessToken = await _tokenService.CreateAccessTokenAsync(user.Id, user.Email ?? string.Empty, Array.Empty<string>());
+            var roles = await _userManager.GetRolesAsync(user);
+            var accessToken = await _tokenService.CreateAccessTokenAsync(user.Id, user.Email ?? string.Empty, roles);
             var refreshToken = await _tokenService.CreateRefreshTokenAsync();
 
             var refreshTokenEntity = new RefreshToken(user.Id, refreshToken, DateTime.UtcNow.AddDays(30));
@@ -102,7 +117,13 @@ namespace CodeImpact.WebApi.Controllers
         {
             var email = User.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
             var subject = User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value;
-            return Ok(new { Email = email, Subject = subject });
+            var roles = User.Claims
+                .Where(c => c.Type == ClaimTypes.Role)
+                .Select(c => c.Value)
+                .Distinct()
+                .ToArray();
+
+            return Ok(new { Email = email, Subject = subject, Roles = roles });
         }
 
         [HttpPost("refresh")]
@@ -130,7 +151,8 @@ namespace CodeImpact.WebApi.Controllers
             refreshEntity.Revoke();
             _dbContext.RefreshTokens.Update(refreshEntity);
 
-            var newAccessToken = await _tokenService.CreateAccessTokenAsync(user.Id, user.Email ?? string.Empty, Array.Empty<string>());
+            var roles = await _userManager.GetRolesAsync(user);
+            var newAccessToken = await _tokenService.CreateAccessTokenAsync(user.Id, user.Email ?? string.Empty, roles);
             var newRefreshToken = await _tokenService.CreateRefreshTokenAsync();
 
             var newRefreshEntity = new RefreshToken(user.Id, newRefreshToken, DateTime.UtcNow.AddDays(30));

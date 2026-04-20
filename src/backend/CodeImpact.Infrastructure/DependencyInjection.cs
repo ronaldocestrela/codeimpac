@@ -1,4 +1,5 @@
 using CodeImpact.Application.Common.Interfaces;
+using CodeImpact.Domain.Common;
 using CodeImpact.Application.Reports;
 using CodeImpact.Domain.Repositories;
 using CodeImpact.Infrastructure.Identity;
@@ -34,6 +35,7 @@ namespace CodeImpact.Infrastructure
             services.Configure<OpenAISettings>(configuration.GetSection(OpenAISettingsSectionName));
             services.AddHttpClient<IGitHubService, GitHubService>();
             services.AddHttpClient<ILLMService, OpenAIService>();
+                services.AddScoped<IAdminUserDirectory, AdminUserDirectory>();
             services.AddScoped<IGitHubTokenProtector, GitHubTokenProtector>();
             services.AddScoped<IGitHubAccountRepository, GitHubAccountRepository>();
             services.AddScoped<IGitHubRepositorySelectionRepository, GitHubRepositorySelectionRepository>();
@@ -42,6 +44,10 @@ namespace CodeImpact.Infrastructure
             services.AddScoped<IGitHubPullRequestReviewRepository, GitHubPullRequestReviewRepository>();
             services.AddScoped<IReportRepository, ReportRepository>();
             services.AddScoped<IBackgroundJobExecutionRepository, BackgroundJobExecutionRepository>();
+            services.AddScoped<IPlanRepository, PlanRepository>();
+            services.AddScoped<IUserSubscriptionRepository, UserSubscriptionRepository>();
+            services.AddScoped<IUserUsageSnapshotRepository, UserUsageSnapshotRepository>();
+            services.AddScoped<IAdminAuditLogRepository, AdminAuditLogRepository>();
             services.AddScoped<IBackgroundJobScheduler, HangfireBackgroundJobScheduler>();
             services.AddScoped<IExecutiveReportExportService, ExecutiveReportExportService>();
 
@@ -68,6 +74,14 @@ namespace CodeImpact.Infrastructure
                         IssuerSigningKey = new SymmetricSecurityKey(key)
                     };
                 });
+
+            services.AddAuthorizationBuilder()
+                .AddPolicy("AdminOnly", policy =>
+                    policy.RequireRole(ApplicationRoles.Owner, ApplicationRoles.Admin))
+                .AddPolicy("ManagerOrHigher", policy =>
+                    policy.RequireRole(ApplicationRoles.Owner, ApplicationRoles.Admin, ApplicationRoles.Manager))
+                .AddPolicy("ViewerOrHigher", policy =>
+                    policy.RequireRole(ApplicationRoles.Owner, ApplicationRoles.Admin, ApplicationRoles.Manager, ApplicationRoles.Viewer));
 
             services.AddScoped<ITokenService, TokenService>();
 

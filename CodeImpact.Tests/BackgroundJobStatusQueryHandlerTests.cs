@@ -57,6 +57,12 @@ public class BackgroundJobStatusQueryHandlerTests
         public Task<BackgroundJobExecution?> GetByIdForUserAsync(Guid userId, Guid id)
             => Task.FromResult(userId == _execution.UserId && id == _execution.Id ? _execution : null);
 
+        public Task<IReadOnlyCollection<BackgroundJobExecution>> ListAsync(string? jobType, string? status, int page, int pageSize)
+            => Task.FromResult((IReadOnlyCollection<BackgroundJobExecution>)new[] { _execution });
+
+        public Task<int> CountAsync(string? jobType, string? status)
+            => Task.FromResult(1);
+
         public Task UpdateAsync(BackgroundJobExecution execution) => Task.CompletedTask;
     }
 }

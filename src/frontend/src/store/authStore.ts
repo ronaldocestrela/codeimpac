@@ -12,11 +12,12 @@ interface AuthState {
   setUser: (user: UserInfo) => void
   setGitHubAccount: (account: GitHubAccount | null) => void
   logout: () => void
+  hasAnyRole: (roles: string[]) => boolean
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    set => ({
+    (set, get) => ({
       accessToken: null,
       refreshToken: null,
       user: null,
@@ -24,7 +25,11 @@ export const useAuthStore = create<AuthState>()(
       setAuthTokens: auth => set({ accessToken: auth.accessToken, refreshToken: auth.refreshToken }),
       setUser: user => set({ user }),
       setGitHubAccount: account => set({ githubAccount: account }),
-      logout: () => set({ accessToken: null, refreshToken: null, user: null, githubAccount: null })
+      logout: () => set({ accessToken: null, refreshToken: null, user: null, githubAccount: null }),
+      hasAnyRole: roles => {
+        const userRoles = get().user?.roles ?? []
+        return roles.some(role => userRoles.includes(role))
+      }
     }),
     {
       name: 'codeimpact-auth',

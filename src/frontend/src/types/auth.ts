@@ -12,6 +12,7 @@ export interface AuthResult {
 export interface UserInfo {
   email: string
   subject: string
+  roles: string[]
 }
 
 export interface RefreshRequest {

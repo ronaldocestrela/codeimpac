@@ -23,6 +23,10 @@ namespace CodeImpact.Infrastructure.Persistence
         public DbSet<Report> Reports { get; set; } = null!;
         public DbSet<BackgroundJobExecution> BackgroundJobExecutions { get; set; } = null!;
         public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
+        public DbSet<Plan> Plans { get; set; } = null!;
+        public DbSet<UserSubscription> UserSubscriptions { get; set; } = null!;
+        public DbSet<UserUsageSnapshot> UserUsageSnapshots { get; set; } = null!;
+        public DbSet<AdminAuditLog> AdminAuditLogs { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -95,6 +99,37 @@ namespace CodeImpact.Infrastructure.Persistence
                 entity.Property(job => job.ResultJson).HasMaxLength(16000);
                 entity.Property(job => job.ErrorMessage).HasMaxLength(4000);
                 entity.Property(job => job.HangfireJobId).HasMaxLength(128);
+            });
+
+            builder.Entity<Plan>(entity =>
+            {
+                entity.HasIndex(plan => plan.Name).IsUnique();
+                entity.Property(plan => plan.Name).HasMaxLength(128).IsRequired();
+                entity.Property(plan => plan.Description).HasMaxLength(1024).IsRequired();
+            });
+
+            builder.Entity<UserSubscription>(entity =>
+            {
+                entity.HasIndex(subscription => subscription.UserId).IsUnique();
+                entity.HasIndex(subscription => new { subscription.Status, subscription.CurrentPeriodEnd });
+                entity.Property(subscription => subscription.Status).HasMaxLength(64).IsRequired();
+                entity.Property(subscription => subscription.BillingIssue).HasMaxLength(1024);
+            });
+
+            builder.Entity<UserUsageSnapshot>(entity =>
+            {
+                entity.HasIndex(snapshot => snapshot.UserId).IsUnique();
+            });
+
+            builder.Entity<AdminAuditLog>(entity =>
+            {
+                entity.HasIndex(log => new { log.AdminUserId, log.CreatedAt });
+                entity.Property(log => log.Action).HasMaxLength(128).IsRequired();
+                entity.Property(log => log.TargetType).HasMaxLength(128).IsRequired();
+                entity.Property(log => log.TargetId).HasMaxLength(128);
+                entity.Property(log => log.PayloadSummary).HasMaxLength(4000).IsRequired();
+                entity.Property(log => log.Result).HasMaxLength(64).IsRequired();
+                entity.Property(log => log.IpAddress).HasMaxLength(128);
             });
 
             builder.Entity<Report>(entity =>

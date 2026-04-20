@@ -8,5 +8,9 @@ namespace CodeImpact.Infrastructure.Identity
         public string FullName { get; set; } = string.Empty;
 
         public string? ProfileImageUrl { get; set; }
+
+        public string AccountStatus { get; set; } = "Active";
+
+        public string SupportFlagsJson { get; set; } = "[]";
     }
 }

@@ -41,5 +41,11 @@ namespace CodeImpact.Infrastructure.Persistence
             _dbContext.GitHubAccounts.Update(account);
             await _dbContext.SaveChangesAsync();
         }
+
+        public async Task DeleteAsync(GitHubAccount account)
+        {
+            _dbContext.GitHubAccounts.Remove(account);
+            await _dbContext.SaveChangesAsync();
+        }
     }
 }

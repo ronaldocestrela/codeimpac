@@ -622,6 +622,11 @@ public class GitHubIntegrationTests
             UpdatedAccount = account;
             return Task.CompletedTask;
         }
+
+        public Task DeleteAsync(GitHubAccount account)
+        {
+            return Task.CompletedTask;
+        }
     }
 
     private sealed class StubGitHubService : IGitHubService

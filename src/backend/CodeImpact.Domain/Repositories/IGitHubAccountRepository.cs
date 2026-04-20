@@ -11,5 +11,6 @@ namespace CodeImpact.Domain.Repositories
         Task<GitHubAccount?> GetByGitHubUserIdAsync(long gitHubUserId);
         Task AddAsync(GitHubAccount account);
         Task UpdateAsync(GitHubAccount account);
+        Task DeleteAsync(GitHubAccount account);
     }
 }

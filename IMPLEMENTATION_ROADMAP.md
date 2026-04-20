@@ -80,8 +80,34 @@
 
 *Status: Implemented — endpoint de exportacao dedicado para relatorios executivos (`markdown`, `pdf`, `docx`), com geracao de arquivo real no backend (QuestPDF e OpenXML), download integrado no frontend via API autenticada e cobertura de testes para assinaturas/estrutura dos arquivos exportados.*
 
-# Phase 10 — Production
+# Phase 10 — Backoffice (Admin)
+1. Define roles and permissions (`Owner`, `Admin`, `Manager`, `Viewer`)
+2. Build user account operations (status, support flags, usage snapshot)
+3. Build subscription operations screens (plan status, renewals, billing issues)
+4. Build operational monitoring screens (sync jobs, AI jobs, report jobs)
+5. Add support tooling (manual re-sync, retry job, temporary account restriction)
+6. Add audit trail for sensitive admin actions
+
+*Status: Implemented — backoffice admin module was delivered with RBAC (`Owner`, `Admin`, `Manager`, `Viewer`), admin APIs for users/jobs/subscription/audit, support actions (status update, support flags, revoke GitHub access, force re-sync, retry failed jobs), audit trail persistence, default plan seeding, and frontend admin pages protected by role-based routes (`/admin/users`, `/admin/users/:id`, `/admin/jobs`, `/admin/subscriptions`, `/admin/audit`).*
+
+# Phase 11 — Billing & Subscription
+1. Define plans and feature limits per user (repos, reports/month, retention)
+2. Integrate payment provider (recommended: Stripe) with hosted checkout
+3. Implement subscription lifecycle (trial, active, past_due, canceled)
+4. Implement webhook processing for billing events with idempotency
+5. Persist billing entities (customer, subscription, invoice, payment event)
+6. Enforce plan limits in application services and frontend UX
+7. Build billing pages for end-user self-service (plan change, invoices, payment method)
+8. Add dunning/recovery communication flow for failed payments
+
+*Status: Pending — billing and subscription flows are not implemented yet.*
+
+# Phase 12 — Production
 1. Docker setup
 2. CI/CD
 3. Logging
 4. Monitoring
+5. Security hardening (secrets, rate limiting, data retention)
+6. Billing and webhook observability alerts
+
+*Status: In progress — base app can run in development, but production readiness and SaaS operations are still pending.*
